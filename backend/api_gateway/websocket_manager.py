@@ -26,21 +26,21 @@ logger = logging.getLogger(__name__)
 
 class ConnectionManager:
     """
-    WebSocket连接管理器
-    负责管理所有WebSocket连接的生命周期，消息路由和状态跟踪
+    WebSocket connection manager
+    Responsible for managing the lifecycle, message routing and state tracking of all WebSocket connections
     """
     
     def __init__(self):
-        # 活跃的WebSocket连接
+        # Active WebSocket connections
         self.active_connections: Dict[str, WebSocket] = {}
         
-        # 连接信息存储
+        # Connection information storage
         self.connection_info: Dict[str, ConnectionInfo] = {}
         
-        # 面试会话存储（与HTTP API共享）
+        # Interview session storage (shared with HTTP API)
         self.interview_sessions: Dict[str, InterviewSession] = {}
         
-        # 统计信息
+        # Statistics
         self.stats = ConnectionStats(
             total_connections=0,
             active_connections=0,
@@ -50,24 +50,24 @@ class ConnectionManager:
             uptime_seconds=0.0
         )
         
-        # 启动时间
+        # Start time
         self.start_time = datetime.now()
         
-        # 心跳任务
+        # Heartbeat task
         self.heartbeat_task: Optional[asyncio.Task] = None
         
         logger.info("WebSocket Connection Manager initialized")
     
     async def connect(self, websocket: WebSocket, session_id: str = None) -> str:
         """
-        建立WebSocket连接
+        Establish WebSocket connection
         
         Args:
-            websocket: WebSocket连接对象
-            session_id: 可选的Session ID，如果不提供将自动生成
+            websocket: WebSocket connection object
+            session_id: Optional Session ID, auto-generated if not provided
             
         Returns:
-            str: 分配的Session ID
+            str: Assigned Session ID
         """
         # 生成或使用提供的session_id
         if not session_id:
@@ -94,7 +94,7 @@ class ConnectionManager:
             if session_id not in self.interview_sessions:
                 self.interview_sessions[session_id] = InterviewSession(session_id)
             
-            # 更新统计
+            # Update statistics
             self.stats.total_connections += 1
             self.stats.active_connections = len(self.active_connections)
             
@@ -156,7 +156,7 @@ class ConnectionManager:
             # 发送消息
             await websocket.send_text(message_json)
             
-            # 更新统计和活动时间
+            # Update statistics和活动时间
             self.stats.messages_sent += 1
             if session_id in self.connection_info:
                 self.connection_info[session_id].last_activity = datetime.now()
@@ -204,7 +204,7 @@ class ConnectionManager:
             Optional[WebSocketMessage]: 响应消息（如果有）
         """
         try:
-            # 更新统计和活动时间
+            # Update statistics和活动时间
             self.stats.messages_received += 1
             if session_id in self.connection_info:
                 self.connection_info[session_id].last_activity = datetime.now()
@@ -319,26 +319,26 @@ class ConnectionManager:
         try:
             text_msg = TextInputMessage(**message_data)
             
-            # 获取面试会话
+            # Get interview session
             session = self.interview_sessions.get(session_id)
             if not session:
                 raise ValueError("Interview session not found")
             
-            # 准备输入数据
+            # Prepare input data
             input_data = {
                 "text": text_msg.get_text(),
                 "context": text_msg.get_context() or session.get_context(),
-                "original_question": "",  # 可以从会话中获取
+                "original_question": "",  # Can be obtained from session
                 "interview_style": self.connection_info[session_id].interview_style
             }
             
-            # 调用AI协调器处理
+            # Call AI coordinator for processing
             result = await ai_coordinator.process_unified_input(
                 input_data=input_data,
                 session_id=session_id
             )
             
-            # 更新会话记录
+            # Update session records
             if result.get("success", True):
                 session.add_ai_interaction(
                     input_type=result["input_type"],
@@ -384,27 +384,27 @@ class ConnectionManager:
             if not audio_data:
                 raise ValueError("No audio data provided")
             
-            # 获取面试会话
+            # Get interview session
             session = self.interview_sessions.get(session_id)
             if not session:
                 raise ValueError("Interview session not found")
             
-            # 准备输入数据
+            # Prepare input data
             input_data = {
                 "audio_content": audio_data,
                 "audio_format": audio_msg.get_audio_format(),
                 "context": audio_msg.get_context() or session.get_context(),
-                "original_question": "",  # 可以从会话中获取
+                "original_question": "",  # Can be obtained from session
                 "interview_style": self.connection_info[session_id].interview_style
             }
             
-            # 调用AI协调器处理
+            # Call AI coordinator for processing
             result = await ai_coordinator.process_unified_input(
                 input_data=input_data,
                 session_id=session_id
             )
             
-            # 更新会话记录
+            # Update session records
             if result.get("success", True):
                 session.add_ai_interaction(
                     input_type=result["input_type"],
@@ -461,7 +461,7 @@ class ConnectionManager:
             # 注意：不删除interview_sessions，保持会话记忆
             # 这样即使连接断开，会话数据仍然保留
             
-            # 更新统计
+            # Update statistics
             self.stats.active_connections = len(self.active_connections)
             
             logger.info(f"Connection cleaned up: {session_id}")

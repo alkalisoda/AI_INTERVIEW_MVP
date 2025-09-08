@@ -18,14 +18,14 @@ const InterviewFlow = ({ interviewData, setInterviewData, onReset, userRole }) =
 
   const startInterview = async () => {
     try {
-      // 使用后端的 /interview/start 端点开始面试
+      // Use backend's /interview/start endpoint to begin interview
       const response = await api.post('/interview/start', {
         session_id: interviewData.sessionId
       })
       
       const startData = response.data
       
-      // 创建问题数组，从返回的第一个问题开始
+      // Create questions array, starting from the returned first question
       const questions = [{
         id: 1,
         question: startData.first_question.question,
@@ -107,7 +107,7 @@ const InterviewFlow = ({ interviewData, setInterviewData, onReset, userRole }) =
       setCurrentState('question')
       setCurrentTranscript('')
       setCurrentFollowUp('')
-      // TODO: 需要从后端获取下一个问题
+      // TODO: Need to get next question from backend
     } else {
       setCurrentState('completed')
     }
@@ -121,7 +121,7 @@ const InterviewFlow = ({ interviewData, setInterviewData, onReset, userRole }) =
     return (
       <div className="loading text-center py-8">
         <div className="text-lg text-gray-600 mb-4">
-          {userRole === 'interviewee' ? '正在准备面试问题...' : '正在准备面试辅助工具...'}
+          {userRole === 'interviewee' ? 'Preparing interview questions...' : 'Preparing interview assistance tools...'}
         </div>
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto"></div>
       </div>
@@ -142,23 +142,23 @@ const InterviewFlow = ({ interviewData, setInterviewData, onReset, userRole }) =
       <div className="interview-completed text-center py-8">
         <div className="text-4xl mb-4">🎉</div>
         <h2 className="text-2xl font-bold text-gray-800 mb-4">
-          {userRole === 'interviewee' ? '面试完成！' : '面试辅助完成！'}
+          {userRole === 'interviewee' ? 'Interview Complete!' : 'Interview Assistance Complete!'}
         </h2>
         <p className="text-gray-600 mb-6">
           {userRole === 'interviewee' 
-            ? '感谢您完成AI面试，祝您好运！' 
-            : '面试辅助工具已为您提供完整支持。'}
+            ? 'Thank you for completing the AI interview, good luck!' 
+            : 'Interview assistance tool has provided you with complete support.'}
         </p>
         <div className="bg-gray-50 rounded-lg p-4 mb-6 max-w-md mx-auto">
-          <h3 className="font-semibold text-gray-700 mb-2">面试总结:</h3>
-          <p className="text-sm text-gray-600">回答问题数: {interviewData.conversations.length}</p>
-          <p className="text-sm text-gray-600">预计用时: ~5分钟</p>
+          <h3 className="font-semibold text-gray-700 mb-2">Interview Summary:</h3>
+          <p className="text-sm text-gray-600">Questions answered: {interviewData.conversations.length}</p>
+          <p className="text-sm text-gray-600">Estimated time: ~5 minutes</p>
         </div>
         <button 
           onClick={onReset}
           className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
         >
-          开始新的面试
+          Start New Interview
         </button>
       </div>
     )

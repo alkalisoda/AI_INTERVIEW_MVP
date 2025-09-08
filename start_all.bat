@@ -2,14 +2,14 @@
 echo Starting AI Interview System - Frontend and Backend...
 echo.
 
-REM 启动后端服务器
+REM Start backend server
 echo [1/2] Starting Backend Server...
 start "AI Interview Backend" cmd /k "cd /d %~dp0backend && conda activate ai-interview && python main.py"
 
-REM 等待2秒让后端先启动
+REM Wait 2 seconds for backend to start first
 timeout /t 2 /nobreak >nul
 
-REM 启动前端开发服务器
+REM Start frontend development server
 echo [2/2] Starting Frontend Development Server...
 start "AI Interview Frontend" cmd /k "cd /d %~dp0frontend && npm run dev"
 

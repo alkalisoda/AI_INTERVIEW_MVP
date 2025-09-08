@@ -22,73 +22,73 @@ from core.config import settings
 logger = logging.getLogger(__name__)
 
 class SkillAssessment(BaseModel):
-    """技能评估模型"""
-    skill_name: str = Field(description="技能名称")
-    score: int = Field(ge=1, le=10, description="评分 1-10")
-    evidence: List[str] = Field(description="支持证据")
-    improvement_suggestions: List[str] = Field(description="改进建议")
+    """Skill assessment model"""
+    skill_name: str = Field(description="Skill name")
+    score: int = Field(ge=1, le=10, description="Score 1-10")
+    evidence: List[str] = Field(description="Supporting evidence")
+    improvement_suggestions: List[str] = Field(description="Improvement suggestions")
 
 class InterviewReport(BaseModel):
-    """面试报告模型"""
+    """Interview report model"""
     session_id: str = Field(description="Session ID")
     candidate_name: str = Field(default="Anonymous", description="Candidate name")
-    interview_date: str = Field(description="面试日期")
-    duration_minutes: float = Field(description="面试时长（分钟）")
+    interview_date: str = Field(description="Interview date")
+    duration_minutes: float = Field(description="Interview duration (minutes)")
     
-    # 整体评估
-    overall_score: int = Field(ge=1, le=10, description="总体评分")
-    overall_summary: str = Field(description="总体评价")
+    # Overall assessment
+    overall_score: int = Field(ge=1, le=10, description="Overall score")
+    overall_summary: str = Field(description="Overall evaluation")
     
-    # 技能评估
-    skill_assessments: List[SkillAssessment] = Field(description="技能评估列表")
+    # Skill assessment
+    skill_assessments: List[SkillAssessment] = Field(description="Skill assessment list")
     
-    # 详细分析
-    strengths: List[str] = Field(description="优势列表")
-    areas_for_improvement: List[str] = Field(description="需要改进的领域")
-    behavioral_insights: List[str] = Field(description="行为洞察")
+    # Detailed analysis
+    strengths: List[str] = Field(description="Strengths list")
+    areas_for_improvement: List[str] = Field(description="Areas needing improvement")
+    behavioral_insights: List[str] = Field(description="Behavioral insights")
     
-    # Question分析
-    question_performance: List[Dict[str, Any]] = Field(description="每个Question的表现分析")
+    # Question analysis
+    question_performance: List[Dict[str, Any]] = Field(description="Performance analysis for each question")
     
-    # 推荐
-    hiring_recommendation: str = Field(description="招聘建议: strongly_recommend, recommend, neutral, not_recommend")
-    next_steps: List[str] = Field(description="后续步骤建议")
+    # Recommendations
+    hiring_recommendation: str = Field(description="Hiring recommendation: strongly_recommend, recommend, neutral, not_recommend")
+    next_steps: List[str] = Field(description="Next step recommendations")
     
-    # 元数据
-    total_questions: int = Field(description="总Question数")
-    followup_questions: int = Field(description="追问数量")
-    response_quality_avg: float = Field(description="Answer质量平均分")
+    # Metadata
+    total_questions: int = Field(description="Total number of questions")
+    followup_questions: int = Field(description="Number of follow-up questions")
+    response_quality_avg: float = Field(description="Average answer quality score")
 
 class AnalysisResult(BaseModel):
-    """Answer质量分析结果模型"""
-    # 分析部分
-    completeness_score: int = Field(ge=1, le=10, description="Answer完整性评分 1-10")
-    specificity_score: int = Field(ge=1, le=10, description="具体性评分 1-10") 
-    key_themes: List[str] = Field(description="识别到的关键主题", max_items=3)
-    missing_elements: List[str] = Field(description="缺少的要素", max_items=3)
+    """Answer quality analysis result model"""
+    # Analysis section
+    completeness_score: int = Field(ge=1, le=10, description="Answer completeness score 1-10")
+    specificity_score: int = Field(ge=1, le=10, description="Specificity score 1-10") 
+    key_themes: List[str] = Field(description="Identified key themes", max_items=3)
+    missing_elements: List[str] = Field(description="Missing elements", max_items=3)
     
-    # 质量判断
-    needs_followup: bool = Field(description="基于质量判断是否需要追问")
-    reasoning: str = Field(description="分析理由")
+    # Quality judgment
+    needs_followup: bool = Field(description="Whether follow-up is needed based on quality assessment")
+    reasoning: str = Field(description="Analysis reasoning")
     
-    # 给chatbot的建议
-    suggested_focus: str = Field(description="建议关注的方向")
-    conversation_context: str = Field(description="conversation context总结")
+    # Suggestions for chatbot
+    suggested_focus: str = Field(description="Recommended focus direction")
+    conversation_context: str = Field(description="Conversation context summary")
 
 class SimplifiedInterviewPlanner:
     """
     Simplified interview planner module
-    只负责决定是否Continue follow-up(maximum 1)或Move to next question
+    Only responsible for deciding whether to continue follow-up (maximum 1) or move to next question
     """
     
     def __init__(self):
         self.llm = langchain_manager.get_analysis_llm()
         
-        # 创建输出解析器
+        # Create output parser
         self.parser = PydanticOutputParser(pydantic_object=AnalysisResult)
         self.fixing_parser = OutputFixingParser.from_llm(parser=self.parser, llm=self.llm)
         
-        # 创建分析链
+        # Create analysis chain
         self.analysis_chain = self._create_analysis_chain()
         
         # conversation memory storage - uncompressed, save complete conversation
@@ -99,38 +99,38 @@ class SimplifiedInterviewPlanner:
     def _create_analysis_chain(self):
         """Create answer quality analysis chain"""
         
-        analysis_template = """你是专业的面试分析师。请基于完整对话历史分析候选人Answer的质量。
+        analysis_template = """You are a professional interview analyst. Please analyze the quality of the candidate's Answer based on the complete conversation history.
 
-**当前Question**: {original_question}
-**候选人Answer**: {user_answer}
+**Current Question**: {original_question}
+**Candidate Answer**: {user_answer}
 
-**完整对话历史**:
+**Complete Conversation History**:
 {conversation_history}
 
-**额外上下文**: {context}
+**Additional Context**: {context}
 
-请结合对话历史进行深度质量分析：
+Please conduct a deep quality analysis considering the conversation history:
 
-1. **Answer质量评估**:
-   - 完整性评分 (1-10): Answer是否完整回应了Question
-   - 具体性评分 (1-10): 是否包含具体例子和细节
-   - 关键主题: 识别Answer中的主要主题 (最多3个)
-   - 缺失要素: Answer中缺少的重要信息 (最多3个)
+1. **Answer Quality Assessment**:
+   - Completeness Score (1-10): Whether the Answer fully addresses the Question
+   - Specificity Score (1-10): Whether it includes specific examples and details
+   - Key Themes: Identify main themes in the Answer (max 3)
+   - Missing Elements: Important information missing from the Answer (max 3)
 
-2. **基于历史的追问建议**:
-   - 结合之前的对话，判断是否需要追问
-   - 考虑是否已经在之前Answer中涵盖了相关内容
-   - 如果Answer完整具体(完整性≥7，具体性≥6)，通常不需要追问
-   - 如果Answer模糊或缺少关键细节，且之前未涉及，建议追问
-   - 避免重复已经问过的内容
+2. **Follow-up Recommendations Based on History**:
+   - Consider previous dialogue to determine if follow-up is needed
+   - Check if content has been covered in previous Answers
+   - If Answer is complete and specific (completeness ≥7, specificity ≥6), follow-up usually not needed
+   - If Answer is vague or lacks key details, and not previously covered, recommend follow-up
+   - Avoid repeating previously asked content
 
-3. **给chatbot的指导**:
-   - 建议关注方向: 应该关注什么方面（考虑历史对话）
-   - conversation context: 总结整体对话进展和候选人表现趋势
+3. **Guidance for Chatbot**:
+   - Suggested Focus: What aspects to focus on (considering conversation history)
+   - Conversation Context: Summarize overall dialogue progress and candidate performance trends
 
 {format_instructions}
 
-请返回JSON格式的分析结果。"""
+Please return the analysis results in JSON format."""
 
         prompt = ChatPromptTemplate.from_messages([
             get_system_message("interview_planner"),
@@ -165,7 +165,7 @@ class SimplifiedInterviewPlanner:
             self._add_to_memory(session_id, {
                 "question": original_question,
                 "answer": user_answer,
-                "timestamp": logger.name  # 简单标记，可以用datetime
+                "timestamp": logger.name  # Simple marker, can use datetime
             })
             
             # Get complete conversation history
@@ -176,7 +176,7 @@ class SimplifiedInterviewPlanner:
                 "user_answer": user_answer,
                 "original_question": original_question,
                 "conversation_history": conversation_history,
-                "context": context or "无先前对话"
+                "context": context or "No previous conversation"
             }
             
             config = create_runnable_config(session_id, task="answer_analysis")
@@ -184,7 +184,7 @@ class SimplifiedInterviewPlanner:
             
             # Return analysis results
             return {
-                # 分析结果 - 给chatbot使用
+                # analysis result - for chatbot use
                 "completeness_score": analysis_result.completeness_score,
                 "specificity_score": analysis_result.specificity_score,
                 "key_themes": analysis_result.key_themes,
@@ -192,11 +192,11 @@ class SimplifiedInterviewPlanner:
                 "suggested_focus": analysis_result.suggested_focus,
                 "conversation_context": analysis_result.conversation_context,
                 
-                # 质量建议
+                # quality suggestions
                 "needs_followup": analysis_result.needs_followup,
                 "reasoning": analysis_result.reasoning,
                 
-                # 原始数据
+                # original data
                 "user_answer": user_answer,
                 "original_question": original_question,
                 "full_conversation": conversation_history
@@ -210,7 +210,7 @@ class SimplifiedInterviewPlanner:
                 "key_themes": ["general"],
                 "missing_elements": [],
                 "suggested_focus": "general",
-                "conversation_context": "分析失败",
+                "conversation_context": "Analysis failed",
                 "needs_followup": False,
                 "reasoning": "System error, unable to analyze"
             }
@@ -224,7 +224,7 @@ class SimplifiedInterviewPlanner:
         logger.debug(f"[{session_id}] Added conversation to memory, total: {len(self.conversation_memories[session_id])}")
     
     def _get_conversation_context(self, session_id: str) -> str:
-        """Get complete conversation history的文本格式"""
+        """Get complete conversation history in text format"""
         if session_id not in self.conversation_memories or not self.conversation_memories[session_id]:
             return "No conversation history"
         
@@ -254,15 +254,15 @@ class SimplifiedInterviewPlanner:
         candidate_name: str = "Anonymous"
     ) -> InterviewReport:
         """
-        生成完整的面试报告
+        Generate comprehensive interview report
         
         Args:
             session_id: Session ID
-            interview_duration_minutes: 面试时长（分钟）
+            interview_duration_minutes: Interview duration (minutes)
             candidate_name: Candidate name
             
         Returns:
-            InterviewReport: 结构化的面试报告
+            InterviewReport: Structured interview report
         """
         try:
             logger.info(f"[{session_id}] Generating comprehensive interview report")
@@ -271,14 +271,13 @@ class SimplifiedInterviewPlanner:
             conversation_history = self.get_conversation_memory(session_id)
             if not conversation_history:
                 raise ValueError("No conversation history found for this session")
-            
-            # 准备分析数据
+            # Prepare analysis data
             full_conversation = self._get_conversation_context(session_id)
             
-            # 创建报告生成链
+            # Create report generation chain
             report_chain = self._create_report_generation_chain()
             
-            # 准备输入数据
+            # Prepare input data
             input_data = {
                 "conversation_history": full_conversation,
                 "total_interactions": len(conversation_history),
@@ -286,15 +285,15 @@ class SimplifiedInterviewPlanner:
                 "candidate_name": candidate_name
             }
             
-            # 生成报告
+            # Generate report
             config = create_runnable_config(session_id, task="report_generation")
             report_result = await report_chain.ainvoke(input_data, config=config)
             
-            # 计算统计数据
+            # Calculate statistics
             total_questions = len(conversation_history)
             followup_count = sum(1 for entry in conversation_history if "followup" in str(entry).lower())
             
-            # 构建最终报告
+            # Build final report
             report = InterviewReport(
                 session_id=session_id,
                 candidate_name=candidate_name,
@@ -321,7 +320,7 @@ class SimplifiedInterviewPlanner:
         except Exception as e:
             logger.error(f"[{session_id}] Failed to generate interview report: {e}")
             
-            # 返回基础回退报告
+            # Return basic fallback report
             return InterviewReport(
                 session_id=session_id,
                 candidate_name=candidate_name,
@@ -342,66 +341,66 @@ class SimplifiedInterviewPlanner:
             )
     
     def _create_report_generation_chain(self):
-        """创建面试报告生成链"""
+        """Create interview report generation chain"""
         
-        report_template = """你是专业的HR面试分析师。请基于完整的面试对话历史，生成一份详细的面试报告。
+        report_template = """You are a professional HR interview analyst. Please generate a detailed interview report based on the complete interview conversation history.
 
-**候选人**: {candidate_name}
-**面试时长**: {session_duration} 分钟
+**Candidate**: {candidate_name}
+**Interview Duration**: {session_duration} minutes
 **Conversation round**: {total_interactions}
 
-**完整对话历史**:
+**Complete Conversation History**:
 {conversation_history}
 
-请进行全面分析并生成结构化报告：
+Please conduct a comprehensive analysis and generate a structured report:
 
-1. **整体评估** (1-10分):
-   - 综合评分及理由
-   - 总体印象和表现摘要
+1. **Overall Assessment** (1-10 points):
+   - Comprehensive score and rationale
+   - Overall impression and performance summary
 
-2. **技能评估** (每项1-10分):
-   - 沟通能力: 表达清晰度、逻辑性
-   - Question解决能力: 分析思维、解决方案
-   - 团队合作: 协作精神、适应性
-   - 领导力: 影响力、决策能力
-   - 学习能力: 成长意愿、反思能力
+2. **Skills Assessment** (1-10 points each):
+   - Communication: Clarity of expression, logic
+   - Problem-solving: Analytical thinking, solutions
+   - Teamwork: Collaborative spirit, adaptability
+   - Leadership: Influence, decision-making
+   - Learning ability: Growth mindset, reflection
 
-3. **详细分析**:
-   - 主要优势 (3-5点)
-   - 需要改进的领域 (2-4点)
-   - 行为特征洞察 (2-3点)
+3. **Detailed Analysis**:
+   - Key strengths (3-5 points)
+   - Areas for improvement (2-4 points)
+   - Behavioral insights (2-3 points)
 
-4. **Question表现分析**:
-   - 每个主要Question的Answer质量
-   - 具体表现和改进建议
+4. **Question Performance Analysis**:
+   - Answer quality for each main question
+   - Specific performance and improvement suggestions
 
-5. **招聘建议**:
-   - 推荐等级: strongly_recommend/recommend/neutral/not_recommend
-   - 具体理由和后续步骤
+5. **Hiring Recommendation**:
+   - Recommendation level: strongly_recommend/recommend/neutral/not_recommend
+   - Specific reasons and next steps
 
-6. **量化指标**:
-   - 平均Answer质量评分
+6. **Quantitative Metrics**:
+   - Average answer quality score
 
-请确保分析客观、具体，基于实际对话内容，避免主观臆断。
+Please ensure analysis is objective and specific, based on actual conversation content, avoiding subjective assumptions.
 
 {format_instructions}
 
-请返回JSON格式的完整报告。"""
+Please return the complete report in JSON format."""
 
-        # 创建报告结果的解析器
+        # Create report result parser
         from pydantic import BaseModel, Field
         
         class ReportGenerationResult(BaseModel):
-            overall_score: int = Field(ge=1, le=10, description="总体评分")
-            overall_summary: str = Field(description="总体评价")
-            skill_assessments: List[SkillAssessment] = Field(description="技能评估")
-            strengths: List[str] = Field(description="优势")
-            areas_for_improvement: List[str] = Field(description="改进领域")
-            behavioral_insights: List[str] = Field(description="行为洞察")
-            question_performance: List[Dict[str, Any]] = Field(description="Question表现")
-            hiring_recommendation: str = Field(description="招聘建议")
-            next_steps: List[str] = Field(description="后续步骤")
-            response_quality_avg: float = Field(description="平均Answer质量")
+            overall_score: int = Field(ge=1, le=10, description="Overall score")
+            overall_summary: str = Field(description="Overall evaluation")
+            skill_assessments: List[SkillAssessment] = Field(description="Skills assessment")
+            strengths: List[str] = Field(description="Strengths")
+            areas_for_improvement: List[str] = Field(description="Areas for improvement")
+            behavioral_insights: List[str] = Field(description="Behavioral insights")
+            question_performance: List[Dict[str, Any]] = Field(description="Question performance")
+            hiring_recommendation: str = Field(description="Hiring recommendation")
+            next_steps: List[str] = Field(description="Next steps")
+            response_quality_avg: float = Field(description="Average answer quality")
         
         parser = PydanticOutputParser(pydantic_object=ReportGenerationResult)
         fixing_parser = OutputFixingParser.from_llm(parser=parser, llm=self.llm)
@@ -432,7 +431,7 @@ class SimplifiedInterviewPlanner:
                     "langchain_integration": False
                 }
             
-            # 简单测试分析链
+            # Simple test of analysis chain
             config = create_runnable_config("health_check", task="health_check")
             test_result = await self.analysis_chain.ainvoke({
                 "user_answer": "I completed a project successfully.",
@@ -462,5 +461,5 @@ class SimplifiedInterviewPlanner:
                 "langchain_integration": False
             }
 
-# 导出简化的规划器
+# Export simplified planner
 InterviewPlanner = SimplifiedInterviewPlanner

@@ -10,9 +10,9 @@ logger = logging.getLogger(__name__)
 
 class SpeechRecognizer:
     """
-    语音识别模块
-    负责将音频文件转换为文本
-    使用OpenAI Whisper API作为主要识别引擎
+    Speech recognition module
+    Responsible for converting audio files to text
+    Uses OpenAI Whisper API as the main recognition engine
     """
     
     def __init__(self):
@@ -22,37 +22,37 @@ class SpeechRecognizer:
     
     async def transcribe_file(self, file_path: str) -> Dict[str, Any]:
         """
-        转录音频文件
+        Transcribe audio file
         
         Args:
-            file_path: 音频文件路径
+            file_path: Audio file path
             
         Returns:
-            Dict包含转录文本和置信度信息
+            Dict containing transcription text and confidence information
         """
         try:
             logger.info(f"Starting transcription of file: {file_path}")
             
-            # 验证文件存在
+            # Verify file exists
             if not Path(file_path).exists():
                 raise FileNotFoundError(f"Audio file not found: {file_path}")
             
-            # 获取文件大小
+            # Get file size
             file_size = Path(file_path).stat().st_size
             if file_size > settings.MAX_AUDIO_SIZE:
                 raise ValueError(f"File too large: {file_size} bytes (max: {settings.MAX_AUDIO_SIZE})")
             
-            # 调用Whisper API
+            # Call Whisper API
             with open(file_path, "rb") as audio_file:
                 transcript = await self.client.audio.transcriptions.create(
                     model=self.model,
                     file=audio_file,
-                    language="en",  # 英语面试
-                    response_format="verbose_json",  # 获取详细信息
-                    temperature=0.0  # 更准确的转录
+                    language="en",  # English interview
+                    response_format="verbose_json",  # Get detailed information
+                    temperature=0.0  # More accurate transcription
                 )
             
-            # 处理转录结果
+            # Process transcription results
             result = {
                 "text": transcript.text.strip(),
                 "confidence": self._estimate_confidence(transcript),

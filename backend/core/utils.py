@@ -11,7 +11,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 class InterviewSession:
-    """管理面试会话状态（增强版）"""
+    """Manage interview session state (enhanced version)"""
     def __init__(self, session_id: str = None):
         self.session_id = session_id or str(uuid.uuid4())
         self.created_at = datetime.now()
@@ -20,13 +20,13 @@ class InterviewSession:
         self.conversation_history = []
         self.user_responses = []
         self.followup_questions = []
-        self.ai_interactions = []  # 记录所有AI交互
+        self.ai_interactions = []  # Record all AI interactions
         self.is_completed = False
         self.interview_style = "formal"
-        self.session_metadata = {}  # 存储额外的会话信息
+        self.session_metadata = {}  # Store additional session information
         
     def add_response(self, question_id: int, question: str, answer: str, followup: str = None):
-        """添加用户Answer和后续Question"""
+        """Add user answer and follow-up question"""
         self.last_activity = datetime.now()
         
         response_data = {
@@ -35,7 +35,7 @@ class InterviewSession:
             "answer": answer,
             "followup": followup,
             "timestamp": datetime.now().isoformat(),
-            "input_type": "text"  # 默认为文本，可以在调用时指定
+            "input_type": "text"  # Default to text, can be specified when calling
         }
         self.user_responses.append(response_data)
         
@@ -54,7 +54,7 @@ class InterviewSession:
     def add_ai_interaction(self, input_type: str, user_input: str, ai_response: str, 
                           processing_time: float, strategy_used: str = "unknown",
                           transcription_info: Dict = None):
-        """记录AI交互"""
+        """Record AI interaction"""
         self.last_activity = datetime.now()
         
         interaction = {
@@ -72,10 +72,10 @@ class InterviewSession:
         self.ai_interactions.append(interaction)
     
     def get_context(self, max_interactions: int = 3) -> str:
-        """获取conversation context用于AI处理（增强版）"""
+        """Get conversation context for AI processing (enhanced version)"""
         context = ""
         
-        # 使用最近的AI交互记录
+        # Use recent AI interaction records
         recent_interactions = self.ai_interactions[-max_interactions:]
         
         for interaction in recent_interactions:
@@ -85,7 +85,7 @@ class InterviewSession:
         return context.strip()
     
     def get_full_context(self) -> Dict[str, Any]:
-        """获取完整的会话上下文信息"""
+        """Get complete session context information"""
         return {
             "session_id": self.session_id,
             "created_at": self.created_at.isoformat(),
@@ -100,31 +100,31 @@ class InterviewSession:
         }
     
     def update_metadata(self, key: str, value: Any):
-        """更新会话元数据"""
+        """Update session metadata"""
         self.session_metadata[key] = value
         self.last_activity = datetime.now()
     
     def is_active(self, timeout_minutes: int = 30) -> bool:
-        """检查会话是否仍然活跃"""
+        """Check if session is still active"""
         time_since_activity = datetime.now() - self.last_activity
         return time_since_activity.total_seconds() < (timeout_minutes * 60)
     
     def next_question(self):
-        """移动到下一个Question"""
+        """Move to next question"""
         self.current_question_index += 1
         self.last_activity = datetime.now()
     
     def complete(self):
-        """标记面试完成"""
+        """Mark interview as completed"""
         self.is_completed = True
         self.last_activity = datetime.now()
 
 class AudioFileHandler:
-    """处理音频文件的临时存储和清理"""
+    """Handle temporary storage and cleanup of audio files"""
     
     @staticmethod
     async def save_temp_audio(file_content: bytes, file_extension: str = "wav") -> str:
-        """保存临时音频文件"""
+        """Save temporary audio file"""
         try:
             # Create temp file
             temp_file = tempfile.NamedTemporaryFile(
@@ -144,7 +144,7 @@ class AudioFileHandler:
     
     @staticmethod
     def cleanup_temp_file(file_path: str):
-        """清理临时文件"""
+        """Clean up temporary file"""
         try:
             if os.path.exists(file_path):
                 os.unlink(file_path)
@@ -153,11 +153,11 @@ class AudioFileHandler:
             logger.error(f"Failed to cleanup temporary file {file_path}: {e}")
 
 class ResponseFormatter:
-    """格式化API响应"""
+    """Format API responses"""
     
     @staticmethod
     def success_response(data: Any, message: str = "Success") -> Dict[str, Any]:
-        """成功响应格式"""
+        """Success response format"""
         return {
             "status": "success",
             "message": message,
@@ -167,7 +167,7 @@ class ResponseFormatter:
     
     @staticmethod
     def error_response(error: str, code: int = 500, details: Any = None) -> Dict[str, Any]:
-        """错误响应格式"""
+        """Error response format"""
         return {
             "status": "error",
             "message": error,
@@ -177,14 +177,14 @@ class ResponseFormatter:
         }
 
 class AsyncTaskManager:
-    """管理异步任务，专注于并发和性能优化"""
+    """Manage async tasks, focused on concurrency and performance optimization"""
     
     def __init__(self):
         self.running_tasks = {}
-        self._semaphore = asyncio.Semaphore(15)  # 增加并发数量限制
+        self._semaphore = asyncio.Semaphore(15)  # Increase concurrency limit
     
     async def run_with_timeout(self, coro, timeout: int = 30):
-        """运行带超时的异步任务"""
+        """Run async task with timeout"""
         try:
             return await asyncio.wait_for(coro, timeout=timeout)
         except asyncio.TimeoutError:
@@ -195,10 +195,10 @@ class AsyncTaskManager:
             raise
     
     async def run_concurrent(self, tasks: list, timeout: int = 30):
-        """并发运行多个任务"""
+        """Run multiple tasks concurrently"""
         async with self._semaphore:
             try:
-                # 使用asyncio.gather进行真正的并发执行
+                # Use asyncio.gather for true concurrent execution
                 results = await asyncio.gather(*tasks, return_exceptions=True)
                 return results
             except Exception as e:
@@ -206,19 +206,19 @@ class AsyncTaskManager:
                 raise
     
     async def run_parallel_tasks(self, task_dict: dict, timeout: int = 30):
-        """并行运行命名任务字典"""
+        """Run named task dictionary in parallel"""
         try:
-            # 创建任务列表
+            # Create task list
             tasks = []
             task_names = []
             for name, coro in task_dict.items():
                 tasks.append(asyncio.wait_for(coro, timeout=timeout))
                 task_names.append(name)
             
-            # 并发执行
+            # Execute concurrently
             results = await asyncio.gather(*tasks, return_exceptions=True)
             
-            # 返回命名结果
+            # Return named results
             return dict(zip(task_names, results))
             
         except Exception as e:

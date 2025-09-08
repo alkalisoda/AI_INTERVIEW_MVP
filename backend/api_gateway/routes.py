@@ -28,15 +28,15 @@ def get_ai_coordinator(request):
 
 router = APIRouter()
 
-# 存储活跃的面试会话 - 现在与WebSocket连接管理器共享
-# 这确保了HTTP API和WebSocket API使用相同的会话存储
+# Store active interview sessions - now shared with WebSocket connection manager
+# This ensures HTTP API and WebSocket API use the same session storage
 def get_active_sessions():
-    """获取活跃会话存储，与WebSocket管理器共享"""
+    """Get active session storage, shared with WebSocket manager"""
     return connection_manager.interview_sessions
 
 active_sessions = get_active_sessions()
 
-# 预定义的面试Question
+# Predefined interview questions
 INTERVIEW_QUESTIONS = [
     {
         "id": 1,
@@ -60,7 +60,7 @@ INTERVIEW_QUESTIONS = [
 
 @router.get("/health")
 async def health_check():
-    """Health check端点"""
+    """Health check endpoint"""
     return ResponseFormatter.success_response({
         "service": "AI Interviewer API Gateway",
         "status": "healthy",
@@ -69,21 +69,21 @@ async def health_check():
 
 @router.post("/interview/initialize")
 async def initialize_interview_session(request: InterviewInitializeRequest):
-    """初始化面试会话连接"""
+    """Initialize interview session connection"""
     try:
         role = request.role
         timestamp = request.timestamp
         
-        # 生成新的Session ID
+        # Generate new Session ID
         import uuid
         session_id = str(uuid.uuid4())
         
-        # 创建新会话（但不开始面试流程）
+        # Create new session (but don't start interview process)
         session = InterviewSession(session_id)
         session.role = role
         session.initialized_at = timestamp
         
-        # 存储会话
+        # Store session
         get_active_sessions()[session_id] = session
         
         logger.info(f"Initialized interview session: {session_id} for role: {role}")
@@ -104,16 +104,16 @@ async def initialize_interview_session(request: InterviewInitializeRequest):
 
 @router.post("/interview/start", response_model=InterviewStartResponse)
 async def start_interview(request: InterviewStartRequest):
-    """开始新的面试会话"""
+    """Start new interview session"""
     try:
-        # 创建新会话
+        # Create new session
         session = InterviewSession(request.session_id)
-        # 使用动态获取的会话存储确保与WebSocket共享
+        # Use dynamic session storage to ensure sharing with WebSocket
         get_active_sessions()[session.session_id] = session
         
         logger.info(f"Started new interview session: {session.session_id}")
         
-        # 返回第一个Question
+        # Return first question
         first_question = InterviewQuestion(**INTERVIEW_QUESTIONS[0])
         
         response = InterviewStartResponse(
@@ -134,7 +134,7 @@ async def start_interview(request: InterviewStartRequest):
 
 @router.get("/interview/{session_id}/status", response_model=InterviewStatusResponse)
 async def get_interview_status(session_id: str):
-    """获取面试会话状态"""
+    """Get interview session status"""
     sessions = get_active_sessions()
     if session_id not in sessions:
         raise HTTPException(status_code=404, detail="Session not found")
@@ -152,7 +152,7 @@ async def get_interview_status(session_id: str):
 
 @router.get("/interview/{session_id}/question")
 async def get_current_question(session_id: str):
-    """获取当前Question"""
+    """Get current question"""
     sessions = get_active_sessions()
     if session_id not in sessions:
         raise HTTPException(status_code=404, detail="Session not found")
@@ -175,7 +175,7 @@ async def get_current_question(session_id: str):
 
 @router.post("/interview/{session_id}/transcribe", response_model=TranscriptionResponse)
 async def transcribe_audio(session_id: str, file: UploadFile = File(...), request: Request = None):
-    """转录音频文件"""
+    """Transcribe audio file"""
     sessions = get_active_sessions()
     if session_id not in sessions:
         raise HTTPException(status_code=404, detail="Session not found")
@@ -184,7 +184,7 @@ async def transcribe_audio(session_id: str, file: UploadFile = File(...), reques
     ai_coordinator = get_ai_coordinator(request)
     
     try:
-        # 检查文件格式
+        # Check file format
         file_extension = file.filename.split('.')[-1].lower()
         if file_extension not in settings.SUPPORTED_AUDIO_FORMATS:
             raise HTTPException(
@@ -192,7 +192,7 @@ async def transcribe_audio(session_id: str, file: UploadFile = File(...), reques
                 detail=f"Unsupported audio format. Supported: {settings.SUPPORTED_AUDIO_FORMATS}"
             )
         
-        # 读取文件内容
+        # Read file content
         content = await file.read()
         if len(content) > settings.MAX_AUDIO_SIZE:
             raise HTTPException(
@@ -200,7 +200,7 @@ async def transcribe_audio(session_id: str, file: UploadFile = File(...), reques
                 detail=f"File too large. Max size: {settings.MAX_AUDIO_SIZE} bytes"
             )
         
-        # 调用AI Backend的语音识别模块
+        # Call AI Backend's speech recognition module
         transcription_result = await ai_coordinator.transcribe_audio(
             content, file_extension, session_id
         )
@@ -231,7 +231,7 @@ async def transcribe_audio(session_id: str, file: UploadFile = File(...), reques
 
 @router.post("/interview/{session_id}/submit-answer")
 async def submit_answer(session_id: str, request: AnswerSubmissionRequest):
-    """提交用户答案"""
+    """Submit user answer"""
     sessions = get_active_sessions()
     if session_id not in sessions:
         raise HTTPException(status_code=404, detail="Session not found")
@@ -239,13 +239,13 @@ async def submit_answer(session_id: str, request: AnswerSubmissionRequest):
     session = sessions[session_id]
     
     try:
-        # 获取当前Question
+        # Get current question
         if session.current_question_index >= len(INTERVIEW_QUESTIONS):
             raise HTTPException(status_code=400, detail="No more questions available")
         
         current_question = INTERVIEW_QUESTIONS[session.current_question_index]
         
-        # 记录用户Answer
+        # Record user answer
         session.add_response(
             question_id=current_question["id"],
             question=current_question["question"],
@@ -270,7 +270,7 @@ async def submit_answer(session_id: str, request: AnswerSubmissionRequest):
 @router.post("/interview/{session_id}/process-unified", response_model=UnifiedInputResponse)
 async def process_unified_input(session_id: str, unified_request: UnifiedInputRequest, request: Request):
     """
-    统一输入处理端点：处理文本输入，自动路由到planner和chatbot
+    Unified input processing endpoint: process text input, automatically route to planner and chatbot
     """
     sessions = get_active_sessions()
     if session_id not in sessions:
@@ -283,7 +283,7 @@ async def process_unified_input(session_id: str, unified_request: UnifiedInputRe
     try:
         logger.info(f"Processing unified text input for session {session_id}")
         
-        # 准备输入数据
+        # Prepare input data
         input_data = {
             "text": unified_request.text,
             "context": unified_request.context or session.get_context(),
@@ -291,7 +291,7 @@ async def process_unified_input(session_id: str, unified_request: UnifiedInputRe
             "interview_style": unified_request.interview_style
         }
         
-        # 调用AI Coordinator的统一处理方法
+        # Call AI Coordinator's unified processing method
         result = await ai_coordinator.process_unified_input(
             input_data=input_data,
             session_id=session_id
@@ -305,7 +305,7 @@ async def process_unified_input(session_id: str, unified_request: UnifiedInputRe
         
         logger.info(f"Unified processing completed for session {session_id}")
         
-        # 记录AI交互到会话中
+        # Record AI interaction in session
         session.add_ai_interaction(
             input_type=result["input_type"],
             user_input=result["user_input"],
@@ -347,7 +347,7 @@ async def process_unified_audio(
     request: Request = None
 ):
     """
-    统一音频处理端点：处理音频文件，自动转录并路由到planner和chatbot
+    Unified audio processing endpoint: process audio files, transcribe and route to planner and chatbot
     """
     sessions = get_active_sessions()
     if session_id not in sessions:
@@ -358,7 +358,7 @@ async def process_unified_audio(
     session = sessions[session_id]
     
     try:
-        # 检查文件格式
+        # Check file format
         file_extension = file.filename.split('.')[-1].lower()
         if file_extension not in settings.SUPPORTED_AUDIO_FORMATS:
             raise HTTPException(
@@ -366,7 +366,7 @@ async def process_unified_audio(
                 detail=f"Unsupported audio format. Supported: {settings.SUPPORTED_AUDIO_FORMATS}"
             )
         
-        # 读取文件内容
+        # Read file content
         content = await file.read()
         if len(content) > settings.MAX_AUDIO_SIZE:
             raise HTTPException(
@@ -376,7 +376,7 @@ async def process_unified_audio(
         
         logger.info(f"Processing unified audio input for session {session_id}")
         
-        # 准备输入数据
+        # Prepare input data
         input_data = {
             "audio_content": content,
             "audio_format": file_extension,
@@ -385,7 +385,7 @@ async def process_unified_audio(
             "interview_style": interview_style
         }
         
-        # 调用AI Coordinator的统一处理方法
+        # Call AI Coordinator's unified processing method
         result = await ai_coordinator.process_unified_input(
             input_data=input_data,
             session_id=session_id
@@ -399,7 +399,7 @@ async def process_unified_audio(
         
         logger.info(f"Unified audio processing completed for session {session_id}")
         
-        # 记录AI交互到会话中
+        # Record AI interaction in session
         session.add_ai_interaction(
             input_type=result["input_type"],
             user_input=result["user_input"],
@@ -434,7 +434,7 @@ async def process_unified_audio(
 @router.post("/interview/{session_id}/process-json", response_model=JSONWorkflowResponse)
 async def process_json_workflow(session_id: str, json_request: JSONWorkflowRequest, request: Request):
     """
-    处理JSON工作流：接收包含用户输入和planner建议的JSON数据，生成回复
+    Process JSON workflow: receive JSON data containing user input and planner suggestions, generate response
     """
     sessions = get_active_sessions()
     if session_id not in sessions:
@@ -446,7 +446,7 @@ async def process_json_workflow(session_id: str, json_request: JSONWorkflowReque
     try:
         logger.info(f"Processing JSON workflow for session {session_id}")
         
-        # 调用AI Coordinator的JSON工作流处理
+        # Call AI Coordinator's JSON workflow processing
         result = await ai_coordinator.process_json_workflow(
             json_data=json_request.json_data,
             session_id=session_id
@@ -482,7 +482,7 @@ async def process_json_workflow(session_id: str, json_request: JSONWorkflowReque
 
 @router.post("/interview/{session_id}/generate-followup", response_model=FollowUpResponse)
 async def generate_followup(session_id: str, followup_request: FollowUpRequest, request: Request):
-    """生成后续Question"""
+    """Generate follow-up question"""
     sessions = get_active_sessions()
     if session_id not in sessions:
         raise HTTPException(status_code=404, detail="Session not found")
@@ -493,16 +493,16 @@ async def generate_followup(session_id: str, followup_request: FollowUpRequest, 
     ai_coordinator = get_ai_coordinator(request)
     
     try:
-        # 获取当前Question信息
+        # Get current question information
         current_question = INTERVIEW_QUESTIONS[session.current_question_index]["question"]
         
-        # 调用AI Backend的对话机器人和规划模块
+        # Call AI Backend's chatbot and planning modules
         followup_result = await ai_coordinator.generate_followup_question(
             user_answer=followup_request.original_answer,
             original_question=current_question,
             conversation_context=session.get_context(),
             session_id=session_id,
-            interview_style="formal"  # 可以从session中获取
+            interview_style="formal"  # Can be obtained from session
         )
         
         if not followup_result["success"]:
@@ -513,7 +513,7 @@ async def generate_followup(session_id: str, followup_request: FollowUpRequest, 
         
         followup = followup_result["followup_question"]
         
-        # 更新会话中的最后一个Answer，添加后续Question
+        # Update last answer in session, add follow-up question
         if session.user_responses:
             session.user_responses[-1]["followup"] = followup
             session.followup_questions.append(followup)
@@ -538,7 +538,7 @@ async def generate_followup(session_id: str, followup_request: FollowUpRequest, 
 
 @router.post("/interview/{session_id}/next-question")
 async def move_to_next_question(session_id: str):
-    """移动到下一个Question"""
+    """Move to next question"""
     sessions = get_active_sessions()
     if session_id not in sessions:
         raise HTTPException(status_code=404, detail="Session not found")
@@ -548,7 +548,7 @@ async def move_to_next_question(session_id: str):
     try:
         session.next_question()
         
-        # 检查是否还有更多Question
+        # Check if there are more questions
         if session.current_question_index >= len(INTERVIEW_QUESTIONS):
             session.complete()
             return ResponseFormatter.success_response({
@@ -557,7 +557,7 @@ async def move_to_next_question(session_id: str):
                 "next_step": "show_completion"
             })
         
-        # 返回下一个Question
+        # Return next question
         next_question = INTERVIEW_QUESTIONS[session.current_question_index]
         
         return ResponseFormatter.success_response({
@@ -576,7 +576,7 @@ async def move_to_next_question(session_id: str):
 
 @router.get("/interview/{session_id}/complete", response_model=InterviewCompletionResponse)
 async def complete_interview(session_id: str):
-    """完成面试并返回总结"""
+    """Complete interview and return summary"""
     sessions = get_active_sessions()
     if session_id not in sessions:
         raise HTTPException(status_code=404, detail="Session not found")
@@ -584,7 +584,7 @@ async def complete_interview(session_id: str):
     session = sessions[session_id]
     session.complete()
     
-    # 生成面试总结
+    # Generate interview summary
     summary = {
         "questions_answered": len(session.user_responses),
         "followups_generated": len(session.followup_questions),
@@ -592,8 +592,8 @@ async def complete_interview(session_id: str):
         "responses": session.user_responses
     }
     
-    # 注意：不再删除会话，保持会话记忆直到服务关闭
-    # 这确保了对话记忆在整个服务生命周期中保持
+    # Note: No longer deleting session, maintain session memory until service shutdown
+    # This ensures conversation memory is maintained throughout service lifecycle
     
     return InterviewCompletionResponse(
         session_id=session_id,
@@ -617,7 +617,7 @@ async def generate_interview_report(session_id: str, report_request: InterviewRe
     try:
         logger.info(f"Generating interview report for session {session_id}")
         
-        # 调用AI Coordinator生成报告
+        # Call AI Coordinator to generate report
         report_result = await ai_coordinator.generate_interview_report(
             session_id=session_id,
             candidate_name=report_request.candidate_name
@@ -647,7 +647,7 @@ async def generate_interview_report(session_id: str, report_request: InterviewRe
             detail=f"Failed to generate interview report: {str(e)}"
         )
 
-# 错误处理函数（将在 main.py 中注册到 FastAPI 应用）
+# Error handling function (will be registered to FastAPI application in main.py)
 async def http_exception_handler(request, exc):
     return JSONResponse(
         status_code=exc.status_code,
@@ -666,30 +666,30 @@ from datetime import datetime
 @router.websocket("/ws/{session_id}")
 async def websocket_endpoint(websocket: WebSocket, session_id: str):
     """
-    WebSocket端点 - 主要的长连接通信接口
-    支持实时的文本和音频输入处理
+    WebSocket endpoint - main long-connection communication interface
+    Supports real-time text and audio input processing
     """
     actual_session_id = None
     
     try:
-        # 建立连接
+        # Establish connection
         actual_session_id = await connection_manager.connect(websocket, session_id)
         logger.info(f"WebSocket connection established: {actual_session_id}")
         
-        # 获取AI协调器（需要从app state获取）
+        # Get AI coordinator (needs to be obtained from app state)
         ai_coordinator = websocket.app.state.ai_coordinator
         
         while True:
             try:
-                # 接收消息
+                # Receive message
                 raw_message = await websocket.receive_text()
                 
-                # 处理消息
+                # Process message
                 response_message = await connection_manager.handle_message(
                     actual_session_id, raw_message, ai_coordinator
                 )
                 
-                # 发送响应（如果有）
+                # Send response (if any)
                 if response_message:
                     await connection_manager.send_message(actual_session_id, response_message)
                     
@@ -700,7 +700,7 @@ async def websocket_endpoint(websocket: WebSocket, session_id: str):
             except Exception as e:
                 logger.error(f"Error in WebSocket message loop for {actual_session_id}: {e}")
                 
-                # 发送错误消息
+                # Send error message
                 error_msg = ErrorMessage(
                     session_id=actual_session_id,
                     data={
@@ -713,21 +713,21 @@ async def websocket_endpoint(websocket: WebSocket, session_id: str):
                 try:
                     await connection_manager.send_message(actual_session_id, error_msg)
                 except:
-                    # 如果无法发送错误消息，连接可能已断开
+                    # If error message cannot be sent, connection may be broken
                     break
     
     except Exception as e:
         logger.error(f"WebSocket connection error: {e}")
         
     finally:
-        # 清理连接
+        # Clean up connection
         if actual_session_id:
             await connection_manager.disconnect(actual_session_id, "connection_ended")
 
 @router.websocket("/ws")
 async def websocket_endpoint_auto_session(websocket: WebSocket):
     """
-    WebSocket端点 - 自动生成Session ID
+    WebSocket endpoint - automatically generate Session ID
     """
     return await websocket_endpoint(websocket, None)
 
@@ -737,7 +737,7 @@ async def websocket_endpoint_auto_session(websocket: WebSocket):
 
 @router.get("/websocket/stats")
 async def get_websocket_stats():
-    """获取WebSocket连接统计信息"""
+    """Get WebSocket connection statistics"""
     try:
         stats = connection_manager.get_connection_stats()
         return ResponseFormatter.success_response({
@@ -750,7 +750,7 @@ async def get_websocket_stats():
 
 @router.get("/websocket/sessions")
 async def get_active_websocket_sessions():
-    """获取所有活跃的WebSocket会话"""
+    """Get all active WebSocket sessions"""
     try:
         active_sessions = connection_manager.get_active_sessions()
         session_details = []
@@ -777,14 +777,14 @@ async def get_active_websocket_sessions():
 
 @router.get("/websocket/sessions/{session_id}")
 async def get_websocket_session_info(session_id: str):
-    """获取指定WebSocket会话的信息"""
+    """Get information for specified WebSocket session"""
     try:
         session_info = connection_manager.get_session_info(session_id)
         
         if not session_info:
             raise HTTPException(status_code=404, detail="Session not found")
         
-        # 获取面试会话信息（如果存在）
+        # Get interview session information (if exists)
         interview_session = connection_manager.interview_sessions.get(session_id)
         interview_data = None
         
@@ -818,12 +818,12 @@ async def get_websocket_session_info(session_id: str):
 
 @router.post("/websocket/sessions/{session_id}/message")
 async def send_message_to_websocket_session(session_id: str, message: Dict):
-    """向指定WebSocket会话发送消息（管理接口）"""
+    """Send message to specified WebSocket session (management interface)"""
     try:
         if not connection_manager.is_session_active(session_id):
             raise HTTPException(status_code=404, detail="Session not active")
         
-        # 创建状态消息
+        # Create status message
         status_message = StatusMessage(
             session_id=session_id,
             data=message
@@ -848,9 +848,9 @@ async def send_message_to_websocket_session(session_id: str, message: Dict):
 
 @router.post("/websocket/broadcast")
 async def broadcast_message_to_all_sessions(message: Dict, exclude_sessions: List[str] = None):
-    """向所有WebSocket会话广播消息（管理接口）"""
+    """Broadcast message to all WebSocket sessions (management interface)"""
     try:
-        # 创建状态消息
+        # Create status message
         broadcast_message = StatusMessage(
             session_id="broadcast",
             data=message

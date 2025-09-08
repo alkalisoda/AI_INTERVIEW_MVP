@@ -1,6 +1,6 @@
 """
-LangChain配置和共享工具
-为planner和chatbot模块提供统一的LangChain设置
+LangChain configuration and shared tools
+Provides unified LangChain settings for planner and chatbot modules
 """
 
 import os
@@ -16,7 +16,7 @@ from core.config import settings
 logger = logging.getLogger(__name__)
 
 class InterviewCallbackHandler(BaseCallbackHandler):
-    """面试专用的回调处理器，用于记录和监控LangChain调用"""
+    """Interview-specific callback handler for recording and monitoring LangChain calls"""
     
     def __init__(self, session_id: str = "unknown"):
         self.session_id = session_id
@@ -24,19 +24,19 @@ class InterviewCallbackHandler(BaseCallbackHandler):
         self.token_usage = {}
     
     def on_llm_start(self, serialized: Dict[str, Any], prompts, **kwargs):
-        """LLM开始调用时的回调"""
+        """Callback when LLM starts calling"""
         import time
         self.start_time = time.time()
         logger.info(f"[{self.session_id}] LLM call started")
     
     def on_llm_end(self, response, **kwargs):
-        """LLM调用结束时的回调"""
+        """Callback when LLM call ends"""
         import time
         if self.start_time:
             duration = time.time() - self.start_time
             logger.info(f"[{self.session_id}] LLM call completed in {duration:.2f}s")
             
-        # 记录token使用情况
+        # Record token usage
         if hasattr(response, 'llm_output') and response.llm_output:
             token_usage = response.llm_output.get('token_usage', {})
             if token_usage:
@@ -44,38 +44,38 @@ class InterviewCallbackHandler(BaseCallbackHandler):
                 logger.info(f"[{self.session_id}] Token usage: {token_usage}")
     
     def on_llm_error(self, error: Exception, **kwargs):
-        """LLM调用出错时的回调"""
+        """Callback when LLM call errors"""
         logger.error(f"[{self.session_id}] LLM error: {error}")
 
 class LangChainManager:
-    """LangChain管理器，提供统一的LLM配置和工具"""
+    """LangChain manager providing unified LLM configuration and tools"""
     
     def __init__(self):
-        # 预创建常用的LLM实例以提高性能
+        # Pre-create commonly used LLM instances for better performance
         self._llm_instances = {}
         self._default_llm = self._create_llm()
-        self._analysis_llm = self._create_llm(temperature=0.3, max_tokens=1500)  # 用于分析
-        self._generation_llm = self._create_llm(temperature=0.7, max_tokens=800)  # 用于生成
+        self._analysis_llm = self._create_llm(temperature=0.3, max_tokens=1500)  # For analysis
+        self._generation_llm = self._create_llm(temperature=0.7, max_tokens=800)  # For generation
         logger.info("LangChain Manager initialized with optimized instances")
     
     def _create_llm(self, temperature: float = 0.7, max_tokens: int = 1000) -> ChatOpenAI:
-        """创建OpenAI LLM实例"""
+        """Create OpenAI LLM instance"""
         return ChatOpenAI(
             model=settings.OPENAI_MODEL_GPT,
             temperature=temperature,
             max_tokens=max_tokens,
             openai_api_key=settings.OPENAI_API_KEY,
             streaming=False,
-            # 优化连接和重试设置
+            # Optimize connection and retry settings
             max_retries=2,
             request_timeout=25,
-            # 启用连接池优化
-            http_client=None  # 使用默认的httpx客户端连接池
+            # Enable connection pool optimization
+            http_client=None  # Use default httpx client connection pool
         )
     
     def get_llm(self, temperature: float = 0.7, max_tokens: int = 1000) -> ChatOpenAI:
-        """获取配置好的LLM实例"""
-        # 对于常用配置，直接返回预创建的实例
+        """Get configured LLM instance"""
+        # Return pre-created instances for common configurations
         if temperature == 0.3 and max_tokens == 1500:
             return self._analysis_llm
         elif temperature == 0.7 and max_tokens == 800:
@@ -83,23 +83,23 @@ class LangChainManager:
         elif temperature == 0.7 and max_tokens == 1000:
             return self._default_llm
         
-        # 对于其他配置，动态创建
+        # Create dynamically for other configurations
         return self._create_llm(temperature, max_tokens)
     
     def get_analysis_llm(self) -> ChatOpenAI:
-        """获取分析专用LLM实例（低温度，高token）"""
+        """Get analysis-specific LLM instance (low temperature, high tokens)"""
         return self._analysis_llm
     
     def get_generation_llm(self) -> ChatOpenAI:
-        """获取生成专用LLM实例（中等温度，中等token）"""
+        """Get generation-specific LLM instance (medium temperature, medium tokens)"""
         return self._generation_llm
     
     def create_callback_handler(self, session_id: str) -> InterviewCallbackHandler:
-        """创建回调处理器"""
+        """Create callback handler"""
         return InterviewCallbackHandler(session_id)
     
     def format_conversation_history(self, history: list) -> list[BaseMessage]:
-        """将对话历史格式化为LangChain消息格式"""
+        """Format conversation history to LangChain message format"""
         messages = []
         for item in history:
             if isinstance(item, dict):
@@ -114,15 +114,15 @@ class LangChainManager:
         return messages
     
     def extract_text_content(self, message: BaseMessage) -> str:
-        """从LangChain消息中提取文本内容"""
+        """Extract text content from LangChain message"""
         if hasattr(message, 'content'):
             return str(message.content)
         return str(message)
 
-# 全局LangChain管理器实例
+# Global LangChain manager instance
 langchain_manager = LangChainManager()
 
-# 预定义的系统消息模板
+# Predefined system message templates
 SYSTEM_MESSAGES = {
     "interview_planner": SystemMessage(content="""You are an expert interview analyst and planner. Your role is to:
 
@@ -182,11 +182,11 @@ Provide balanced, constructive feedback that helps candidates understand their p
 }
 
 def get_system_message(message_type: str) -> SystemMessage:
-    """获取预定义的系统消息"""
+    """Get predefined system message"""
     return SYSTEM_MESSAGES.get(message_type, SystemMessage(content="You are a helpful AI assistant."))
 
 def create_runnable_config(session_id: str, **kwargs) -> RunnableConfig:
-    """创建LangChain运行配置"""
+    """Create LangChain runnable configuration"""
     callback_handler = langchain_manager.create_callback_handler(session_id)
     
     config = RunnableConfig(

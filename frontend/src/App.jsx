@@ -20,7 +20,7 @@ function App() {
     setConnectionError(null)
 
     try {
-      // 立即与后端建立连接
+      // Immediately establish connection with backend
       const sessionData = await initializeInterviewSession(role)
       
       setInterviewData(prev => ({
@@ -31,7 +31,7 @@ function App() {
       setCurrentView('interview')
     } catch (error) {
       console.error('Failed to connect to backend:', error)
-      setConnectionError('无法连接到后端服务，请检查网络连接或稍后重试。')
+      setConnectionError('Unable to connect to backend service, please check network connection or try again later.')
       setCurrentView('roleSelection')
     }
   }
@@ -58,12 +58,12 @@ function App() {
               🤖 AI Interview System
             </h1>
             <p className="text-xl text-gray-600 mb-8">
-              欢迎使用 AI 面试系统！
+              Welcome to the AI Interview System!
             </p>
             
             <div className="space-y-6">
               <h2 className="text-2xl font-semibold text-gray-700 mb-6">
-                准备开始面试
+                Ready to Start Interview
               </h2>
               
               {connectionError && (
@@ -71,7 +71,7 @@ function App() {
                   <div className="flex items-center">
                     <div className="text-red-500 mr-3">⚠️</div>
                     <div>
-                      <p className="text-red-800 font-medium">连接失败</p>
+                      <p className="text-red-800 font-medium">Connection Failed</p>
                       <p className="text-red-600 text-sm">{connectionError}</p>
                     </div>
                   </div>
@@ -84,26 +84,26 @@ function App() {
                   className="w-full p-8 bg-blue-50 rounded-xl border-2 border-blue-200 hover:border-blue-400 hover:bg-blue-100 transition-all duration-200 group"
                 >
                   <div className="text-5xl mb-4 group-hover:scale-110 transition-transform">👤</div>
-                  <h3 className="text-2xl font-semibold text-blue-800 mb-3">开始面试</h3>
-                  <p className="text-blue-600 mb-2">我是来参加面试的候选人</p>
-                  <p className="text-sm text-blue-500">点击开始与AI面试官对话</p>
+                  <h3 className="text-2xl font-semibold text-blue-800 mb-3">Start Interview</h3>
+                  <p className="text-blue-600 mb-2">I am a candidate here for the interview</p>
+                  <p className="text-sm text-blue-500">Click to start conversation with AI interviewer</p>
                 </button>
                 
-                {/* 保留面试官接口供未来扩展使用 - 目前隐藏 */}
+                {/* Keep interviewer interface for future expansion - currently hidden */}
                 {false && (
                   <button 
                     onClick={() => handleRoleSelection('interviewer')}
                     className="w-full p-6 bg-green-50 rounded-xl border-2 border-green-200 hover:border-green-400 hover:bg-green-100 transition-all duration-200 group mt-4"
                   >
                     <div className="text-4xl mb-4 group-hover:scale-110 transition-transform">👔</div>
-                    <h3 className="text-xl font-semibold text-green-800 mb-2">面试官模式</h3>
-                    <p className="text-green-600">使用AI辅助进行面试</p>
+                    <h3 className="text-xl font-semibold text-green-800 mb-2">Interviewer Mode</h3>
+                    <p className="text-green-600">Use AI assistance for conducting interviews</p>
                   </button>
                 )}
               </div>
               
               <div className="mt-8 text-sm text-gray-500">
-                <p>💡 选择角色后将进入相应的面试界面</p>
+                <p>💡 After selecting a role, you will enter the corresponding interview interface</p>
               </div>
             </div>
           </div>
@@ -117,12 +117,12 @@ function App() {
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
         <div className="max-w-md mx-auto p-8 bg-white rounded-2xl shadow-xl text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-6"></div>
-          <h2 className="text-2xl font-semibold text-gray-800 mb-4">正在连接后端服务</h2>
-          <p className="text-gray-600 mb-6">正在初始化面试环境，请稍候...</p>
+          <h2 className="text-2xl font-semibold text-gray-800 mb-4">Connecting to Backend Service</h2>
+          <p className="text-gray-600 mb-6">Initializing interview environment, please wait...</p>
           <div className="text-sm text-gray-500">
-            <p>⚡ 建立AI连接</p>
-            <p>🎯 准备面试问题</p>
-            <p>🎤 初始化语音识别</p>
+            <p>⚡ Establishing AI connection</p>
+            <p>🎯 Preparing interview questions</p>
+            <p>🎤 Initializing voice recognition</p>
           </div>
         </div>
       </div>

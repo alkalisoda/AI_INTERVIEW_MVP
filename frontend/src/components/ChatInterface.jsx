@@ -32,11 +32,11 @@ const ChatInterface = ({ interviewData, setInterviewData, onReset, userRole }) =
       
       const startData = response.data
       
-      // 添加欢迎消息和第一个问题
+      // Add welcome message and first question
       const welcomeMessage = {
         id: Date.now(),
         type: 'bot',
-        content: '您好！欢迎参加AI面试。我将为您提出几个问题，请您如实回答。让我们开始吧！',
+        content: 'Hello! Welcome to the AI interview. I will ask you several questions, please answer them honestly. Let\'s begin!',
         timestamp: new Date().toISOString()
       }
 
@@ -64,7 +64,7 @@ const ChatInterface = ({ interviewData, setInterviewData, onReset, userRole }) =
       setMessages([{
         id: Date.now(),
         type: 'system',
-        content: '抱歉，无法开始面试。请检查网络连接后重试。',
+        content: 'Sorry, unable to start interview. Please check network connection and try again.',
         timestamp: new Date().toISOString()
       }])
     }
@@ -73,7 +73,7 @@ const ChatInterface = ({ interviewData, setInterviewData, onReset, userRole }) =
   const handleTextSubmit = async () => {
     if (!inputText.trim()) return
 
-    // 添加用户消息
+    // Add user message
     const userMessage = {
       id: Date.now(),
       type: 'user',
@@ -86,11 +86,11 @@ const ChatInterface = ({ interviewData, setInterviewData, onReset, userRole }) =
     setIsLoading(true)
 
     try {
-      // 这里可以调用后端API处理回答
+      // Here we can call backend API to process the answer
       await processAnswer(userMessage.content)
     } catch (error) {
       console.error('Error processing answer:', error)
-      addSystemMessage('处理回答时出现错误，请重试。')
+      addSystemMessage('Error processing answer, please try again.')
     } finally {
       setIsLoading(false)
     }
@@ -98,28 +98,28 @@ const ChatInterface = ({ interviewData, setInterviewData, onReset, userRole }) =
 
   const processAnswer = async (answerText) => {
     try {
-      // 添加处理中的消息
+      // Add processing message
       const processingMessage = {
         id: Date.now(),
         type: 'system',
-        content: '🤖 AI正在分析您的回答...',
+        content: '🤖 AI is analyzing your answer...',
         timestamp: new Date().toISOString()
       }
       setMessages(prev => [...prev, processingMessage])
 
-      // 调用gateway的统一处理接口
+      // Call gateway's unified processing interface
       const response = await api.post(`/interview/${interviewData.sessionId}/process-unified`, {
         text: answerText,
-        context: messages.slice(-5).map(msg => `${msg.type}: ${msg.content}`).join('\n'), // 传递最近5条消息作为上下文
+        context: messages.slice(-5).map(msg => `${msg.type}: ${msg.content}`).join('\n'), // Pass recent 5 messages as context
         interview_style: 'formal'
       })
 
       const aiResponse = response.data
 
-      // 移除处理中的消息
+      // Remove processing message
       setMessages(prev => prev.filter(msg => msg.id !== processingMessage.id))
 
-      // 添加AI的回复
+      // Add AI's reply
       const aiMessage = {
         id: Date.now(),
         type: 'bot',
@@ -133,7 +133,7 @@ const ChatInterface = ({ interviewData, setInterviewData, onReset, userRole }) =
 
       setMessages(prev => [...prev, aiMessage])
 
-      // 更新面试数据
+      // Update interview data
       setInterviewData(prev => ({
         ...prev,
         conversations: [...prev.conversations, {
@@ -146,12 +146,12 @@ const ChatInterface = ({ interviewData, setInterviewData, onReset, userRole }) =
     } catch (error) {
       console.error('Error processing answer:', error)
       
-      // 移除处理中的消息
-      setMessages(prev => prev.filter(msg => msg.type !== 'system' || !msg.content.includes('分析')))
+      // Remove processing message
+      setMessages(prev => prev.filter(msg => msg.type !== 'system' || !msg.content.includes('analyzing')))
       
-      let errorMessage = '处理回答时出现错误，请重试。'
+      let errorMessage = 'Error processing answer, please try again.'
       if (error.response?.data?.detail) {
-        errorMessage = `处理失败: ${error.response.data.detail}`
+        errorMessage = `Processing failed: ${error.response.data.detail}`
       }
       addSystemMessage(`❌ ${errorMessage}`)
     }
@@ -194,7 +194,7 @@ const ChatInterface = ({ interviewData, setInterviewData, onReset, userRole }) =
       setIsRecording(true)
     } catch (error) {
       console.error('Error starting recording:', error)
-      addSystemMessage('无法访问麦克风，请检查权限设置。')
+      addSystemMessage('Unable to access microphone, please check permission settings.')
     }
   }
 
@@ -212,24 +212,24 @@ const ChatInterface = ({ interviewData, setInterviewData, onReset, userRole }) =
     const processingMessage = {
       id: Date.now(),
       type: 'system',
-      content: '🎤 正在处理语音输入...',
+      content: '🎤 Processing voice input...',
       timestamp: new Date().toISOString()
     }
     setMessages(prev => [...prev, processingMessage])
 
     try {
-      // 创建FormData来上传音频文件
+      // Create FormData to upload audio file
       const formData = new FormData()
       
-      // 将audioBlob转换为文件
+      // Convert audioBlob to file
       const audioFile = new File([audioBlob], 'recording.wav', { type: 'audio/wav' })
       formData.append('file', audioFile)
       
-      // 添加上下文信息
+      // Add context information
       formData.append('context', messages.slice(-5).map(msg => `${msg.type}: ${msg.content}`).join('\n'))
       formData.append('interview_style', 'formal')
 
-      // 调用gateway的统一音频处理接口
+      // Call gateway's unified audio processing interface
       const response = await api.post(`/interview/${interviewData.sessionId}/process-unified-audio`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
@@ -238,10 +238,10 @@ const ChatInterface = ({ interviewData, setInterviewData, onReset, userRole }) =
 
       const aiResponse = response.data
       
-      // 移除处理中的消息
+      // Remove processing message
       setMessages(prev => prev.filter(msg => msg.id !== processingMessage.id))
       
-      // 添加用户消息（显示识别的文字）
+      // Add user message（显示识别的文字）
       const userMessage = {
         id: Date.now(),
         type: 'user',
@@ -253,7 +253,7 @@ const ChatInterface = ({ interviewData, setInterviewData, onReset, userRole }) =
       }
       setMessages(prev => [...prev, userMessage])
 
-      // 添加AI的回复
+      // Add AI's reply
       const aiMessage = {
         id: Date.now() + 1,
         type: 'bot',
@@ -266,7 +266,7 @@ const ChatInterface = ({ interviewData, setInterviewData, onReset, userRole }) =
       }
       setMessages(prev => [...prev, aiMessage])
 
-      // 更新面试数据
+      // Update interview data
       setInterviewData(prev => ({
         ...prev,
         conversations: [...prev.conversations, {
@@ -281,13 +281,13 @@ const ChatInterface = ({ interviewData, setInterviewData, onReset, userRole }) =
     } catch (error) {
       console.error('Error processing audio:', error)
       
-      // 移除处理中的消息
+      // Remove processing message
       setMessages(prev => prev.filter(msg => msg.id !== processingMessage.id))
       
-      // 添加错误消息
-      let errorMessage = '语音处理失败，请重试或使用文字输入。'
+      // Add error message
+      let errorMessage = 'Voice processing failed, please try again or use text input.'
       if (error.response?.data?.detail) {
-        errorMessage = `处理失败: ${error.response.data.detail}`
+        errorMessage = `Processing failed: ${error.response.data.detail}`
       }
       addSystemMessage(`❌ ${errorMessage}`)
     } finally {
@@ -307,7 +307,7 @@ const ChatInterface = ({ interviewData, setInterviewData, onReset, userRole }) =
       <div className="flex items-center justify-center h-96">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
-          <p className="text-gray-600">正在准备面试环境...</p>
+          <p className="text-gray-600">Preparing interview environment...</p>
         </div>
       </div>
     )
@@ -318,12 +318,12 @@ const ChatInterface = ({ interviewData, setInterviewData, onReset, userRole }) =
       <div className="flex items-center justify-center h-96">
         <div className="text-center">
           <div className="text-red-500 text-4xl mb-4">⚠️</div>
-          <p className="text-gray-600 mb-4">面试启动失败</p>
+          <p className="text-gray-600 mb-4">Interview startup failed</p>
           <button 
             onClick={onReset}
             className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
           >
-            重新开始
+            Restart
           </button>
         </div>
       </div>
@@ -339,15 +339,15 @@ const ChatInterface = ({ interviewData, setInterviewData, onReset, userRole }) =
             <span className="text-white text-lg">🤖</span>
           </div>
           <div>
-            <h2 className="font-semibold text-gray-800">AI面试官</h2>
-            <p className="text-sm text-gray-500">在线 • 正在面试中</p>
+            <h2 className="font-semibold text-gray-800">AI Interviewer</h2>
+            <p className="text-sm text-gray-500">Online • Interviewing</p>
           </div>
         </div>
         <button 
           onClick={onReset}
           className="text-gray-500 hover:text-gray-700 px-3 py-1 rounded"
         >
-          结束面试
+          End Interview
         </button>
       </div>
 
@@ -382,10 +382,10 @@ const ChatInterface = ({ interviewData, setInterviewData, onReset, userRole }) =
                 {message.isVoice && (
                   <div className="mt-1 flex items-center space-x-1">
                     <span className="text-xs opacity-75">🎤</span>
-                    <span className="text-xs opacity-75">语音转文字</span>
+                    <span className="text-xs opacity-75">Voice to Text</span>
                     {message.confidence && (
                       <span className="text-xs opacity-75">
-                        • 置信度: {Math.round(message.confidence * 100)}%
+                        • Confidence: {Math.round(message.confidence * 100)}%
                       </span>
                     )}
                     {message.processingTime && (
@@ -460,7 +460,7 @@ const ChatInterface = ({ interviewData, setInterviewData, onReset, userRole }) =
                   value={inputText}
                   onChange={(e) => setInputText(e.target.value)}
                   onKeyPress={handleKeyPress}
-                  placeholder="输入您的回答..."
+                  placeholder="Enter your answer..."
                   className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   disabled={isLoading}
                 />
@@ -469,7 +469,7 @@ const ChatInterface = ({ interviewData, setInterviewData, onReset, userRole }) =
                   disabled={!inputText.trim() || isLoading}
                   className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
-                  发送
+                  Send
                 </button>
               </>
             ) : (
@@ -483,7 +483,7 @@ const ChatInterface = ({ interviewData, setInterviewData, onReset, userRole }) =
                       : 'bg-blue-500 text-white hover:bg-blue-600'
                   } disabled:opacity-50 disabled:cursor-not-allowed`}
                 >
-                  {isRecording ? '🔴 点击停止录音' : '🎤 点击开始录音'}
+                  {isRecording ? '🔴 Click to Stop Recording' : '🎤 Click to Start Recording'}
                 </button>
               </div>
             )}
@@ -492,7 +492,7 @@ const ChatInterface = ({ interviewData, setInterviewData, onReset, userRole }) =
 
         {/* Status Info */}
         <div className="mt-2 text-xs text-gray-500 text-center">
-          {inputMode === 'text' ? '按 Enter 发送，Shift + Enter 换行' : '支持语音输入，自动转换为文字'}
+          {inputMode === 'text' ? 'Press Enter to send, Shift + Enter for new line' : 'Voice input supported, automatically converts to text'}
         </div>
       </div>
     </div>
