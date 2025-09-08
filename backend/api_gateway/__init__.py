@@ -1,0 +1,1 @@
+# API Gateway for frontend-backend communication

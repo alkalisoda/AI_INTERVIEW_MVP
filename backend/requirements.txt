@@ -1,0 +1,41 @@
+# Core web framework
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+
+# CORS middleware
+python-multipart==0.0.6
+
+# OpenAI integration
+openai>=1.6.1
+
+# LangChain framework for AI applications
+langchain>=0.1.0
+langchain-openai>=0.0.5
+langchain-community>=0.0.20
+
+# Audio processing for Whisper API
+pydub==0.25.1
+
+# Environment variables
+python-dotenv==1.0.0
+
+# HTTP requests
+httpx==0.25.2
+requests==2.31.0
+
+# Data validation
+pydantic==2.5.0
+
+# File handling
+aiofiles==23.2.1
+
+# WebSocket support
+websockets==12.0
+
+# Optional: For local speech processing (if needed)
+# speechrecognition==3.10.0
+# pyaudio==0.2.11  # For microphone input
+
+# Development dependencies
+pytest==7.4.3
+pytest-asyncio==0.21.1

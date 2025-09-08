@@ -1,0 +1,617 @@
+/* Main App styles */
+.app {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 20px;
+}
+
+/* Welcome Screen */
+.welcome-screen {
+  background: white;
+  border-radius: 20px;
+  padding: 40px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
+  max-width: 600px;
+  width: 100%;
+  text-align: center;
+}
+
+.welcome-container h1 {
+  color: #2c3e50;
+  font-size: 2.5rem;
+  margin-bottom: 20px;
+  font-weight: 700;
+}
+
+.greeting-message {
+  background: #f8f9fa;
+  border-radius: 12px;
+  padding: 25px;
+  margin: 30px 0;
+  border-left: 4px solid #667eea;
+}
+
+.greeting-message p {
+  font-size: 1.1rem;
+  color: #495057;
+  line-height: 1.6;
+}
+
+.interview-info {
+  margin: 30px 0;
+  text-align: left;
+}
+
+.interview-info h3 {
+  color: #2c3e50;
+  margin-bottom: 15px;
+  font-size: 1.2rem;
+}
+
+.interview-info ul {
+  list-style: none;
+  padding-left: 0;
+}
+
+.interview-info li {
+  padding: 8px 0;
+  padding-left: 25px;
+  position: relative;
+}
+
+.interview-info li::before {
+  content: "✓";
+  position: absolute;
+  left: 0;
+  color: #28a745;
+  font-weight: bold;
+}
+
+.tone-selection {
+  margin: 30px 0;
+}
+
+.tone-selection h3 {
+  color: #2c3e50;
+  margin-bottom: 15px;
+  font-size: 1.2rem;
+}
+
+.tone-buttons {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.tone-btn {
+  background: #e9ecef;
+  color: #495057;
+  border: 2px solid #dee2e6;
+  padding: 10px 20px;
+  font-size: 14px;
+  border-radius: 25px;
+  transition: all 0.3s ease;
+}
+
+.tone-btn:hover,
+.tone-btn.active {
+  background: #667eea;
+  color: white;
+  border-color: #667eea;
+  transform: translateY(-2px);
+}
+
+.start-button {
+  background: linear-gradient(45deg, #667eea, #764ba2);
+  color: white;
+  font-size: 1.2rem;
+  padding: 15px 40px;
+  border-radius: 50px;
+  margin: 30px 0 20px;
+  box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+  transition: all 0.3s ease;
+}
+
+.start-button:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 15px 40px rgba(102, 126, 234, 0.4);
+}
+
+.tech-requirements {
+  margin-top: 20px;
+  padding: 15px;
+  background: #fff3cd;
+  border-radius: 8px;
+  border-left: 4px solid #ffc107;
+}
+
+.tech-requirements small {
+  color: #856404;
+}
+
+/* Interview Flow */
+.interview-flow {
+  background: white;
+  border-radius: 20px;
+  padding: 30px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
+  max-width: 800px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+.progress-bar {
+  width: 100%;
+  height: 6px;
+  background: #e9ecef;
+  border-radius: 3px;
+  margin-bottom: 20px;
+  overflow: hidden;
+}
+
+.progress {
+  height: 100%;
+  background: linear-gradient(45deg, #667eea, #764ba2);
+  border-radius: 3px;
+  transition: width 0.5s ease;
+}
+
+.question-counter {
+  text-align: center;
+  color: #6c757d;
+  font-size: 14px;
+  margin-bottom: 30px;
+}
+
+/* Question Display */
+.question-display {
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.question-container h2 {
+  color: #2c3e50;
+  font-size: 1.5rem;
+  margin-bottom: 20px;
+}
+
+.question-text {
+  background: #f8f9fa;
+  border-radius: 12px;
+  padding: 25px;
+  border-left: 4px solid #667eea;
+  margin-bottom: 15px;
+}
+
+.question-text p {
+  font-size: 1.1rem;
+  color: #495057;
+  line-height: 1.6;
+}
+
+.question-type {
+  color: #6c757d;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+/* Voice Recorder */
+.voice-recorder {
+  text-align: center;
+  margin: 30px 0;
+}
+
+.recording-controls {
+  margin-bottom: 20px;
+}
+
+.record-btn {
+  background: linear-gradient(45deg, #28a745, #20c997);
+  color: white;
+  font-size: 1.1rem;
+  padding: 15px 30px;
+  border-radius: 50px;
+  box-shadow: 0 8px 25px rgba(40, 167, 69, 0.3);
+}
+
+.record-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 35px rgba(40, 167, 69, 0.4);
+}
+
+.recording-active {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 15px;
+}
+
+.stop-btn {
+  background: linear-gradient(45deg, #dc3545, #c82333);
+  color: white;
+  font-size: 1.1rem;
+  padding: 15px 30px;
+  border-radius: 50px;
+  box-shadow: 0 8px 25px rgba(220, 53, 69, 0.3);
+}
+
+.stop-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 35px rgba(220, 53, 69, 0.4);
+}
+
+.recording-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.recording-indicator {
+  color: #dc3545;
+  font-weight: bold;
+  font-size: 14px;
+  animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+  0% { opacity: 1; }
+  50% { opacity: 0.5; }
+  100% { opacity: 1; }
+}
+
+.timer {
+  font-family: monospace;
+  font-size: 18px;
+  font-weight: bold;
+  color: #2c3e50;
+}
+
+.live-transcript {
+  background: #f8f9fa;
+  border-radius: 12px;
+  padding: 20px;
+  margin: 20px 0;
+  border-left: 4px solid #28a745;
+}
+
+.live-transcript h4 {
+  color: #2c3e50;
+  margin-bottom: 10px;
+  font-size: 1rem;
+}
+
+.live-transcript p {
+  color: #495057;
+  font-style: italic;
+}
+
+.fallback-options {
+  margin-top: 20px;
+}
+
+.text-fallback-btn {
+  background: #6c757d;
+  color: white;
+  font-size: 14px;
+  padding: 8px 16px;
+  border-radius: 20px;
+}
+
+.text-fallback-btn:hover {
+  background: #5a6268;
+}
+
+/* Text Mode */
+.text-mode {
+  background: #f8f9fa;
+  border-radius: 12px;
+  padding: 25px;
+  margin: 20px 0;
+}
+
+.text-input-container h3 {
+  color: #2c3e50;
+  margin-bottom: 20px;
+  font-size: 1.2rem;
+}
+
+.text-input {
+  width: 100%;
+  padding: 15px;
+  border: 2px solid #dee2e6;
+  border-radius: 8px;
+  font-size: 16px;
+  font-family: inherit;
+  resize: vertical;
+  margin-bottom: 15px;
+}
+
+.text-input:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.submit-btn {
+  background: linear-gradient(45deg, #667eea, #764ba2);
+  color: white;
+  padding: 12px 25px;
+  border-radius: 25px;
+  margin-right: 10px;
+}
+
+.submit-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+}
+
+.switch-mode-btn {
+  background: transparent;
+  color: #667eea;
+  border: 2px solid #667eea;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 14px;
+  margin-top: 10px;
+}
+
+.switch-mode-btn:hover {
+  background: #667eea;
+  color: white;
+}
+
+/* Transcription Display */
+.transcription-display {
+  margin: 30px 0;
+  text-align: center;
+}
+
+.transcription-container h3 {
+  color: #2c3e50;
+  margin-bottom: 20px;
+}
+
+.transcript-text {
+  background: #f8f9fa;
+  border-radius: 12px;
+  padding: 25px;
+  border-left: 4px solid #28a745;
+  margin-bottom: 20px;
+}
+
+.transcript-text p {
+  color: #495057;
+  font-size: 1.1rem;
+  line-height: 1.6;
+}
+
+.loading-followup {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 15px;
+}
+
+.loading-followup p {
+  color: #6c757d;
+  font-style: italic;
+}
+
+/* Follow-up Question */
+.followup-question {
+  margin: 30px 0;
+  text-align: center;
+}
+
+.followup-container h3 {
+  color: #2c3e50;
+  margin-bottom: 20px;
+  font-size: 1.3rem;
+}
+
+.followup-container .question-text {
+  background: #fff3cd;
+  border-left: 4px solid #ffc107;
+  border-radius: 12px;
+  padding: 25px;
+  margin-bottom: 25px;
+}
+
+.followup-container .question-text p {
+  color: #856404;
+  font-size: 1.1rem;
+  font-weight: 500;
+}
+
+.voice-answer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 15px;
+  margin-bottom: 20px;
+}
+
+.voice-btn, .text-btn {
+  background: #667eea;
+  color: white;
+  padding: 12px 25px;
+  border-radius: 25px;
+  font-size: 16px;
+}
+
+.voice-btn:hover, .text-btn:hover {
+  background: #5a67d8;
+  transform: translateY(-2px);
+}
+
+.or-text {
+  color: #6c757d;
+  font-style: italic;
+  margin: 0;
+}
+
+.text-answer {
+  margin-bottom: 20px;
+}
+
+.answer-input {
+  width: 100%;
+  padding: 15px;
+  border: 2px solid #dee2e6;
+  border-radius: 8px;
+  font-size: 16px;
+  font-family: inherit;
+  resize: vertical;
+  margin-bottom: 15px;
+}
+
+.answer-input:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.answer-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.back-btn {
+  background: #6c757d;
+  color: white;
+  padding: 12px 25px;
+  border-radius: 25px;
+}
+
+.back-btn:hover {
+  background: #5a6268;
+}
+
+.skip-option {
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid #dee2e6;
+}
+
+.skip-btn {
+  background: transparent;
+  color: #6c757d;
+  border: 2px solid #dee2e6;
+  padding: 10px 20px;
+  border-radius: 20px;
+  font-size: 14px;
+}
+
+.skip-btn:hover {
+  border-color: #6c757d;
+  background: #6c757d;
+  color: white;
+}
+
+/* Interview Completed */
+.interview-completed {
+  text-align: center;
+  padding: 40px;
+  background: white;
+  border-radius: 20px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
+  max-width: 600px;
+  width: 100%;
+}
+
+.interview-completed h2 {
+  color: #28a745;
+  font-size: 2rem;
+  margin-bottom: 20px;
+}
+
+.interview-completed p {
+  color: #495057;
+  font-size: 1.1rem;
+  margin-bottom: 30px;
+}
+
+.summary {
+  background: #f8f9fa;
+  border-radius: 12px;
+  padding: 25px;
+  margin: 30px 0;
+  border-left: 4px solid #28a745;
+}
+
+.summary h3 {
+  color: #2c3e50;
+  margin-bottom: 15px;
+}
+
+.summary p {
+  color: #495057;
+  margin: 5px 0;
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 768px) {
+  .app {
+    padding: 10px;
+  }
+
+  .welcome-screen,
+  .interview-flow,
+  .interview-completed {
+    padding: 20px;
+    margin: 10px;
+  }
+
+  .welcome-container h1 {
+    font-size: 2rem;
+  }
+
+  .greeting-message {
+    padding: 20px;
+  }
+
+  .tone-buttons {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .recording-active {
+    gap: 10px;
+  }
+
+  .answer-actions {
+    flex-direction: column;
+    align-items: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .welcome-container h1 {
+    font-size: 1.8rem;
+  }
+
+  .greeting-message p,
+  .question-text p,
+  .transcript-text p {
+    font-size: 1rem;
+  }
+
+  .start-button {
+    font-size: 1rem;
+    padding: 12px 30px;
+  }
+
+  .record-btn,
+  .stop-btn {
+    font-size: 1rem;
+    padding: 12px 25px;
+  }
+}
