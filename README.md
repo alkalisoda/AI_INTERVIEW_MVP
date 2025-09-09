@@ -50,7 +50,9 @@ A comprehensive AI-powered behavioral interview simulator with real-time voice i
 - **Python 3.11+** (with conda recommended)
 - **Node.js 16+** and npm
 - **OpenAI API Key** (for GPT-4 and Whisper APIs)
-- **Windows**: Use CMD instead of PowerShell due to execution policy restrictions
+- **Windows**: Use CMD (Command Prompt) instead of PowerShell due to execution policy restrictions
+  - Open CMD by pressing `Win + R`, type `cmd`, and press Enter
+  - Or search for "Command Prompt" in the Start menu
 
 ## 🚀 Quick Start
 
@@ -58,7 +60,6 @@ A comprehensive AI-powered behavioral interview simulator with real-time voice i
 ```cmd
 git clone https://github.com/alkalisoda/AI_INTERVIEW_MVP.git
 cd AI_INTERVIEW_MVP\ai-interview-project
-start_all.bat
 ```
 
 ### Option 2: Manual Setup
@@ -88,7 +89,9 @@ DEBUG=true
 
 Start backend:
 ```cmd
+REM Make sure conda environment is activated
 conda activate ai-interview
+cd backend
 python main.py
 ```
 🌐 Backend: `http://localhost:8000` | 📚 API Docs: `http://localhost:8000/docs`
@@ -99,16 +102,13 @@ cd frontend
 npm install
 ```
 
-Create `.env` file in frontend folder:
-```env
-VITE_API_URL=http://localhost:8000/api/v1
-```
+**Note**: Frontend is configured with Vite proxy, so no additional `.env` file is needed for local development.
 
 Start frontend:
 ```cmd
 npm run dev
 ```
-🌐 Frontend: `http://localhost:5173`
+🌐 Frontend: `http://localhost:3000`
 
 ## 📡 Key API Endpoints
 
@@ -225,7 +225,8 @@ Ensure all production `.env` files have appropriate values for your hosting envi
 - `SUPPORTED_AUDIO_FORMATS` - Comma-separated audio formats
 
 #### Frontend
-- `VITE_API_URL` - Backend API URL (default: http://localhost:8000/api)
+- Frontend uses Vite proxy configuration for API calls in development
+- For production builds, configure `VITE_API_URL` if needed
 
 ## 🔮 Roadmap & Future Enhancements
 
@@ -259,9 +260,11 @@ Ensure all production `.env` files have appropriate values for your hosting envi
 ### Common Issues
 
 **🔧 Backend won't start**
-- Ensure conda environment is activated: `conda activate ai-interview`  
+- Ensure conda environment is activated: `conda activate ai-interview`
+- Make sure you're in the `backend` directory when running `python main.py`
 - Verify OpenAI API key is set in `.env` file
 - Check port 8000 isn't already in use
+- Install dependencies: `pip install -r requirements.txt`
 
 **🎙️ Voice recording not working**
 - Use Chrome or Safari for full voice support
@@ -272,6 +275,18 @@ Ensure all production `.env` files have appropriate values for your hosting envi
 - Verify OpenAI API key has sufficient credits
 - Check internet connection for API requests
 - Review logs at `http://localhost:8000/health` for AI service status
+
+**🔧 Frontend won't start**
+- Ensure Node.js 16+ is installed: `node --version`
+- Install dependencies: `npm install` in frontend directory
+- Check port 3000 isn't already in use
+- Clear npm cache if needed: `npm cache clean --force`
+
+**🐍 Conda environment issues**
+- Ensure conda is installed and in PATH
+- Create environment with specific Python version: `conda create -n ai-interview python=3.11 -y`
+- If activation fails, try: `conda init` then restart terminal
+- List environments to verify: `conda env list`
 
 ### Getting Help
 1. 📚 Check [API documentation](http://localhost:8000/docs) when running locally

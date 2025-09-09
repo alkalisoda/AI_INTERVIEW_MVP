@@ -18,7 +18,7 @@ echo ========================================
 echo AI Interview System Starting...
 echo ========================================
 echo Backend: http://localhost:8000
-echo Frontend: http://localhost:5173 (or check frontend terminal)
+echo Frontend: http://localhost:3000 (or check frontend terminal)
 echo API Docs: http://localhost:8000/docs
 echo.
 echo Both services are starting in separate windows.
