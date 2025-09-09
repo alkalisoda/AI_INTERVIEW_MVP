@@ -7,7 +7,8 @@ const ChatInterface = ({ interviewData, setInterviewData, onReset, userRole }) =
   const [inputMode, setInputMode] = useState('text') // 'text' or 'voice'
   const [isRecording, setIsRecording] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
-  const [currentState, setCurrentState] = useState('loading')
+  const [currentState, setCurrentState] = useState('loading') // 'loading', 'interviewing', 'completed', 'error'
+  const [interviewCompleted, setInterviewCompleted] = useState(false)
   const messagesEndRef = useRef(null)
   const mediaRecorderRef = useRef(null)
   const audioChunksRef = useRef([])
@@ -19,6 +20,36 @@ const ChatInterface = ({ interviewData, setInterviewData, onReset, userRole }) =
   useEffect(() => {
     scrollToBottom()
   }, [messages])
+
+  // Cleanup function
+  const cleanupResourcesRef = useRef(() => {
+    try {
+      // Stop any ongoing recordings
+      if (mediaRecorderRef.current && isRecording) {
+        mediaRecorderRef.current.stop()
+        setIsRecording(false)
+      }
+      
+      // Stop any media streams
+      if (mediaRecorderRef.current && mediaRecorderRef.current.stream) {
+        mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop())
+      }
+      
+      // Clear audio chunks
+      audioChunksRef.current = []
+      
+      console.log('Resources cleaned up on unmount')
+    } catch (error) {
+      console.error('Error cleaning up resources on unmount:', error)
+    }
+  })
+
+  useEffect(() => {
+    // Cleanup resources when component unmounts
+    return () => {
+      cleanupResourcesRef.current()
+    }
+  }, [])
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
@@ -57,7 +88,7 @@ const ChatInterface = ({ interviewData, setInterviewData, onReset, userRole }) =
         currentQuestionId: startData.first_question.id
       }))
       
-      setCurrentState('question')
+      setCurrentState('interviewing')
     } catch (error) {
       console.error('Failed to start interview:', error)
       setCurrentState('error')
@@ -111,7 +142,7 @@ const ChatInterface = ({ interviewData, setInterviewData, onReset, userRole }) =
       const response = await api.post(`/interview/${interviewData.sessionId}/process-unified`, {
         text: answerText,
         context: messages.slice(-5).map(msg => `${msg.type}: ${msg.content}`).join('\n'), // Pass recent 5 messages as context
-        interview_style: 'formal'
+        interview_style: interviewData.interviewStyle || 'formal'
       })
 
       const aiResponse = response.data
@@ -133,13 +164,32 @@ const ChatInterface = ({ interviewData, setInterviewData, onReset, userRole }) =
 
       setMessages(prev => [...prev, aiMessage])
 
+      // Check if interview is completed
+      if (aiResponse.response_type === 'interview_completed' || aiResponse.interview_completed) {
+        setInterviewCompleted(true)
+        setCurrentState('completed')
+        
+        // Cleanup resources
+        cleanupResources()
+        
+        // Generate interview report after a short delay
+        setTimeout(async () => {
+          try {
+            await generateInterviewReport()
+          } catch (error) {
+            console.error('Failed to generate report:', error)
+          }
+        }, 2000)
+      }
+
       // Update interview data
       setInterviewData(prev => ({
         ...prev,
         conversations: [...prev.conversations, {
           userInput: answerText,
           aiResponse: aiResponse.ai_response,
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
+          completed: aiResponse.response_type === 'interview_completed'
         }]
       }))
 
@@ -227,7 +277,7 @@ const ChatInterface = ({ interviewData, setInterviewData, onReset, userRole }) =
       
       // Add context information
       formData.append('context', messages.slice(-5).map(msg => `${msg.type}: ${msg.content}`).join('\n'))
-      formData.append('interview_style', 'formal')
+      formData.append('interview_style', interviewData.interviewStyle || 'formal')
 
       // Call gateway's unified audio processing interface
       const response = await api.post(`/interview/${interviewData.sessionId}/process-unified-audio`, formData, {
@@ -266,6 +316,24 @@ const ChatInterface = ({ interviewData, setInterviewData, onReset, userRole }) =
       }
       setMessages(prev => [...prev, aiMessage])
 
+      // Check if interview is completed
+      if (aiResponse.response_type === 'interview_completed' || aiResponse.interview_completed) {
+        setInterviewCompleted(true)
+        setCurrentState('completed')
+        
+        // Cleanup resources
+        cleanupResources()
+        
+        // Generate interview report after a short delay
+        setTimeout(async () => {
+          try {
+            await generateInterviewReport()
+          } catch (error) {
+            console.error('Failed to generate report:', error)
+          }
+        }, 2000)
+      }
+
       // Update interview data
       setInterviewData(prev => ({
         ...prev,
@@ -274,7 +342,8 @@ const ChatInterface = ({ interviewData, setInterviewData, onReset, userRole }) =
           aiResponse: aiResponse.ai_response,
           timestamp: new Date().toISOString(),
           inputType: 'audio',
-          transcriptionInfo: aiResponse.transcription_info
+          transcriptionInfo: aiResponse.transcription_info,
+          completed: aiResponse.response_type === 'interview_completed'
         }]
       }))
       
@@ -292,6 +361,55 @@ const ChatInterface = ({ interviewData, setInterviewData, onReset, userRole }) =
       addSystemMessage(`❌ ${errorMessage}`)
     } finally {
       setIsLoading(false)
+    }
+  }
+
+  const cleanupResources = () => {
+    try {
+      // Stop any ongoing recordings
+      if (isRecording && mediaRecorderRef.current) {
+        mediaRecorderRef.current.stop()
+        setIsRecording(false)
+      }
+      
+      // Stop any media streams
+      if (mediaRecorderRef.current && mediaRecorderRef.current.stream) {
+        mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop())
+      }
+      
+      // Clear audio chunks
+      audioChunksRef.current = []
+      
+      // Clear input text
+      setInputText('')
+      setIsLoading(false)
+      
+      console.log('Resources cleaned up successfully')
+    } catch (error) {
+      console.error('Error cleaning up resources:', error)
+    }
+  }
+
+  const generateInterviewReport = async () => {
+    try {
+      addSystemMessage('🎯 Generating interview report...')
+      
+      const candidateName = interviewData.candidateName || 'Anonymous'
+      const response = await api.post(`/interview/${interviewData.sessionId}/generate-report`, {
+        candidate_name: candidateName
+      })
+      
+      const reportData = response.data
+      if (reportData.success) {
+        addSystemMessage(`✅ Interview report generated successfully for ${candidateName}!`)
+        console.log('Report generated:', reportData)
+      } else {
+        addSystemMessage('⚠️ Report generation completed with some issues.')
+      }
+      
+    } catch (error) {
+      console.error('Failed to generate report:', error)
+      addSystemMessage('❌ Failed to generate interview report.')
     }
   }
 
@@ -340,7 +458,13 @@ const ChatInterface = ({ interviewData, setInterviewData, onReset, userRole }) =
           </div>
           <div>
             <h2 className="font-semibold text-gray-800">AI Interviewer</h2>
-            <p className="text-sm text-gray-500">Online • Interviewing</p>
+            <p className="text-sm text-gray-500">
+              {interviewCompleted ? (
+                <span className="text-green-600">✅ Interview Completed</span>
+              ) : (
+                'Online • Interviewing'
+              )}
+            </p>
           </div>
         </div>
         <button 
@@ -424,76 +548,97 @@ const ChatInterface = ({ interviewData, setInterviewData, onReset, userRole }) =
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Input Area */}
+      {/* Input Area or Completion Actions */}
       <div className="bg-white border-t border-gray-200 p-4">
-        <div className="flex items-center space-x-3">
-          {/* Input Mode Toggle */}
-          <div className="flex bg-gray-100 rounded-lg p-1">
+        {interviewCompleted ? (
+          /* Interview Completed - Show Return Button */
+          <div className="flex flex-col items-center space-y-4">
+            <div className="text-center">
+              <div className="text-4xl mb-2">🎉</div>
+              <h3 className="text-lg font-semibold text-gray-800 mb-2">Interview Completed!</h3>
+              <p className="text-sm text-gray-600">Thank you for participating in the AI interview.</p>
+            </div>
             <button
-              onClick={() => setInputMode('text')}
-              className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                inputMode === 'text'
-                  ? 'bg-white text-blue-600 shadow-sm'
-                  : 'text-gray-500 hover:text-gray-700'
-              }`}
+              onClick={onReset}
+              className="px-8 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors font-medium flex items-center space-x-2"
             >
-              📝
-            </button>
-            <button
-              onClick={() => setInputMode('voice')}
-              className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                inputMode === 'voice'
-                  ? 'bg-white text-blue-600 shadow-sm'
-                  : 'text-gray-500 hover:text-gray-700'
-              }`}
-            >
-              🎤
+              <span>🏠</span>
+              <span>Return to Home</span>
             </button>
           </div>
-
-          {/* Input Field */}
-          <div className="flex-1 flex items-center space-x-2">
-            {inputMode === 'text' ? (
-              <>
-                <input
-                  type="text"
-                  value={inputText}
-                  onChange={(e) => setInputText(e.target.value)}
-                  onKeyPress={handleKeyPress}
-                  placeholder="Enter your answer..."
-                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  disabled={isLoading}
-                />
+        ) : (
+          /* Normal Interview - Show Input */
+          <>
+            <div className="flex items-center space-x-3">
+              {/* Input Mode Toggle */}
+              <div className="flex bg-gray-100 rounded-lg p-1">
                 <button
-                  onClick={handleTextSubmit}
-                  disabled={!inputText.trim() || isLoading}
-                  className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  onClick={() => setInputMode('text')}
+                  className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                    inputMode === 'text'
+                      ? 'bg-white text-blue-600 shadow-sm'
+                      : 'text-gray-500 hover:text-gray-700'
+                  }`}
                 >
-                  Send
+                  📝
                 </button>
-              </>
-            ) : (
-              <div className="flex-1 flex items-center justify-center">
                 <button
-                  onClick={isRecording ? stopRecording : startRecording}
-                  disabled={isLoading}
-                  className={`px-8 py-3 rounded-lg font-medium transition-all ${
-                    isRecording
-                      ? 'bg-red-500 text-white hover:bg-red-600 animate-pulse'
-                      : 'bg-blue-500 text-white hover:bg-blue-600'
-                  } disabled:opacity-50 disabled:cursor-not-allowed`}
+                  onClick={() => setInputMode('voice')}
+                  className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                    inputMode === 'voice'
+                      ? 'bg-white text-blue-600 shadow-sm'
+                      : 'text-gray-500 hover:text-gray-700'
+                  }`}
                 >
-                  {isRecording ? '🔴 Click to Stop Recording' : '🎤 Click to Start Recording'}
+                  🎤
                 </button>
               </div>
-            )}
-          </div>
-        </div>
 
-        {/* Status Info */}
-        <div className="mt-2 text-xs text-gray-500 text-center">
-          {inputMode === 'text' ? 'Press Enter to send, Shift + Enter for new line' : 'Voice input supported, automatically converts to text'}
-        </div>
+              {/* Input Field */}
+              <div className="flex-1 flex items-center space-x-2">
+                {inputMode === 'text' ? (
+                  <>
+                    <input
+                      type="text"
+                      value={inputText}
+                      onChange={(e) => setInputText(e.target.value)}
+                      onKeyPress={handleKeyPress}
+                      placeholder="Enter your answer..."
+                      className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      disabled={isLoading}
+                    />
+                    <button
+                      onClick={handleTextSubmit}
+                      disabled={!inputText.trim() || isLoading}
+                      className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    >
+                      Send
+                    </button>
+                  </>
+                ) : (
+                  <div className="flex-1 flex items-center justify-center">
+                    <button
+                      onClick={isRecording ? stopRecording : startRecording}
+                      disabled={isLoading}
+                      className={`px-8 py-3 rounded-lg font-medium transition-all ${
+                        isRecording
+                          ? 'bg-red-500 text-white hover:bg-red-600 animate-pulse'
+                          : 'bg-blue-500 text-white hover:bg-blue-600'
+                      } disabled:opacity-50 disabled:cursor-not-allowed`}
+                    >
+                      {isRecording ? '🔴 Click to Stop Recording' : '🎤 Click to Start Recording'}
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Status Info */}
+            <div className="mt-2 text-xs text-gray-500 text-center">
+              {inputMode === 'text' ? 'Press Enter to send, Shift + Enter for new line' : 'Voice input supported, automatically converts to text'}
+            </div>
+          </>
+        )}
       </div>
     </div>
   )

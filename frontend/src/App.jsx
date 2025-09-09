@@ -1,9 +1,10 @@
 import React, { useState } from 'react'
 import ChatInterface from './components/ChatInterface'
+import WelcomeScreen from './components/WelcomeScreen'
 import { initializeInterviewSession } from './utils/apiHelpers'
 
 function App() {
-  const [currentView, setCurrentView] = useState('roleSelection') // roleSelection, connecting, interview
+  const [currentView, setCurrentView] = useState('roleSelection') // roleSelection, nameInput, connecting, interview
   const [userRole, setUserRole] = useState(null) // 'interviewer' or 'interviewee'
   const [connectionError, setConnectionError] = useState(null)
   const [interviewData, setInterviewData] = useState({
@@ -11,10 +12,12 @@ function App() {
     currentQuestionIndex: 0,
     conversations: [],
     sessionId: null,
-    totalQuestions: 0
+    totalQuestions: 0,
+    candidateName: '',
+    interviewStyle: 'formal'
   })
 
-  const handleRoleSelection = async (role) => {
+  const handleRoleSelection = async (role, interviewInfo = null) => {
     setUserRole(role)
     setCurrentView('connecting')
     setConnectionError(null)
@@ -25,7 +28,9 @@ function App() {
       
       setInterviewData(prev => ({
         ...prev,
-        sessionId: sessionData.session_id || Date.now().toString()
+        sessionId: sessionData.session_id || Date.now().toString(),
+        candidateName: interviewInfo?.candidateName || '',
+        interviewStyle: interviewInfo?.interviewStyle || 'formal'
       }))
       
       setCurrentView('interview')
@@ -34,6 +39,10 @@ function App() {
       setConnectionError('Unable to connect to backend service, please check network connection or try again later.')
       setCurrentView('roleSelection')
     }
+  }
+
+  const handleNameSubmit = async (interviewInfo) => {
+    await handleRoleSelection('interviewee', interviewInfo)
   }
 
   const handleReset = () => {
@@ -45,7 +54,9 @@ function App() {
       currentQuestionIndex: 0,
       conversations: [],
       sessionId: null,
-      totalQuestions: 0
+      totalQuestions: 0,
+      candidateName: '',
+      interviewStyle: 'formal'
     })
   }
 
@@ -80,7 +91,7 @@ function App() {
               
               <div className="max-w-md mx-auto">
                 <button 
-                  onClick={() => handleRoleSelection('interviewee')}
+                  onClick={() => setCurrentView('nameInput')}
                   className="w-full p-8 bg-blue-50 rounded-xl border-2 border-blue-200 hover:border-blue-400 hover:bg-blue-100 transition-all duration-200 group"
                 >
                   <div className="text-5xl mb-4 group-hover:scale-110 transition-transform">👤</div>
@@ -106,6 +117,24 @@ function App() {
                 <p>💡 After selecting a role, you will enter the corresponding interview interface</p>
               </div>
             </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  if (currentView === 'nameInput') {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
+        <div className="max-w-2xl mx-auto p-8 bg-white rounded-2xl shadow-xl">
+          <WelcomeScreen onStart={handleNameSubmit} />
+          <div className="mt-6 text-center">
+            <button 
+              onClick={() => setCurrentView('roleSelection')}
+              className="text-gray-500 hover:text-gray-700 underline"
+            >
+              ← Back to role selection
+            </button>
           </div>
         </div>
       </div>

@@ -1,0 +1,119 @@
+{
+  "success": true,
+  "report": {
+    "session_id": "1757384691223",
+    "candidate_name": "QINGYANG WU",
+    "interview_date": "2025-09-08",
+    "duration_minutes": 9.0,
+    "overall_score": 5,
+    "overall_summary": "The candidate, Qingyang Wu, provided basic responses with limited depth and specificity. While there is evidence of technical skills and a proactive approach to learning, the answers lacked comprehensive details and examples. The candidate's communication was clear but could benefit from more structured and detailed responses.",
+    "skill_assessments": [
+      {
+        "skill_name": "Communication",
+        "score": 5,
+        "evidence": [
+          "Clear expression in introducing background and experiences.",
+          "Responses were brief and lacked depth."
+        ],
+        "improvement_suggestions": [
+          "Provide more detailed examples and explanations.",
+          "Structure responses with a clear beginning, middle, and end."
+        ]
+      },
+      {
+        "skill_name": "Problem-solving",
+        "score": 6,
+        "evidence": [
+          "Used AI coding tools to overcome lack of front-end skills.",
+          "Managed to balance job hunting and studies with planning."
+        ],
+        "improvement_suggestions": [
+          "Elaborate on problem-solving processes and outcomes.",
+          "Include more specific examples of challenges faced and solutions implemented."
+        ]
+      },
+      {
+        "skill_name": "Teamwork",
+        "score": 4,
+        "evidence": [
+          "No specific mention of teamwork or collaboration."
+        ],
+        "improvement_suggestions": [
+          "Discuss experiences working in teams or collaborative projects.",
+          "Highlight roles and contributions in team settings."
+        ]
+      },
+      {
+        "skill_name": "Leadership",
+        "score": 3,
+        "evidence": [
+          "No evidence of leadership roles or decision-making."
+        ],
+        "improvement_suggestions": [
+          "Provide examples of leadership experiences or initiatives taken.",
+          "Discuss decision-making processes and influence on others."
+        ]
+      },
+      {
+        "skill_name": "Learning ability",
+        "score": 7,
+        "evidence": [
+          "Proactively learned AI and deep learning skills.",
+          "Adapted to using AI tools for unfamiliar tasks."
+        ],
+        "improvement_suggestions": [
+          "Reflect on learning experiences and growth.",
+          "Share future learning goals and how they align with career aspirations."
+        ]
+      }
+    ],
+    "strengths": [
+      "Technical skills in AI and machine learning.",
+      "Proactive approach to learning and using new tools."
+    ],
+    "areas_for_improvement": [
+      "Provide more detailed and structured responses.",
+      "Include examples of teamwork and leadership experiences."
+    ],
+    "behavioral_insights": [
+      "Candidate is proactive in learning and adapting to new challenges.",
+      "Demonstrates basic problem-solving skills but lacks depth in explanation."
+    ],
+    "question_performance": [
+      {
+        "question": "Introduce yourself briefly.",
+        "answer_quality": 5,
+        "suggestions": [
+          "Include more details about specific experiences and achievements.",
+          "Discuss how past experiences align with future career goals."
+        ]
+      },
+      {
+        "question": "Recent achievement you are proud of.",
+        "answer_quality": 5,
+        "suggestions": [
+          "Provide more context about the project and your contributions.",
+          "Discuss the impact of the achievement on your skills or career."
+        ]
+      },
+      {
+        "question": "Describe a time when you overcame a conflict or challenge.",
+        "answer_quality": 5,
+        "suggestions": [
+          "Detail the specific challenges faced and how they were addressed.",
+          "Explain the outcomes and what was learned from the experience."
+        ]
+      }
+    ],
+    "hiring_recommendation": "neutral",
+    "next_steps": [
+      "Conduct a follow-up interview focusing on detailed project experiences.",
+      "Explore teamwork and leadership experiences in more depth."
+    ],
+    "total_questions": 6,
+    "followup_questions": 0,
+    "response_quality_avg": 5.0
+  },
+  "generated_at": "2025-09-08T19:29:22.738096",
+  "session_id": "1757384691223"
+}

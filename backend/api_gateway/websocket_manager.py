@@ -69,18 +69,18 @@ class ConnectionManager:
         Returns:
             str: Assigned Session ID
         """
-        # 生成或使用提供的session_id
+        # Generate or use provided session_id
         if not session_id:
             session_id = str(uuid.uuid4())
         
         try:
-            # 接受WebSocket连接
+            # Accept WebSocket connection
             await websocket.accept()
             
-            # 存储连接
+            # Store connection
             self.active_connections[session_id] = websocket
             
-            # 创建连接信息
+            # Create connection info
             client_address = f"{websocket.client.host}:{websocket.client.port}" if websocket.client else "unknown"
             self.connection_info[session_id] = ConnectionInfo(
                 session_id=session_id,
@@ -90,7 +90,7 @@ class ConnectionManager:
                 is_active=True
             )
             
-            # 创建或获取面试会话
+            # Create or get interview session
             if session_id not in self.interview_sessions:
                 self.interview_sessions[session_id] = InterviewSession(session_id)
             
@@ -100,7 +100,7 @@ class ConnectionManager:
             
             logger.info(f"WebSocket connected: {session_id} from {client_address}")
             
-            # 发送连接确认消息
+            # Send connection confirmation message
             await self.send_message(session_id, ConnectedMessage(
                 session_id=session_id,
                 data={
@@ -110,7 +110,7 @@ class ConnectionManager:
                 }
             ))
             
-            # 启动心跳检查（如果还没有启动）
+            # Start heartbeat check (if not already started)
             if not self.heartbeat_task:
                 self.heartbeat_task = asyncio.create_task(self._heartbeat_loop())
             
@@ -123,25 +123,25 @@ class ConnectionManager:
     
     async def disconnect(self, session_id: str, reason: str = "client_disconnect"):
         """
-        断开WebSocket连接
+        Disconnect WebSocket connection
         
         Args:
             session_id: Session ID
-            reason: 断开原因
+            reason: Disconnect reason
         """
         logger.info(f"Disconnecting WebSocket: {session_id}, reason: {reason}")
         await self._cleanup_connection(session_id)
     
     async def send_message(self, session_id: str, message: WebSocketMessage) -> bool:
         """
-        向指定会话发送消息
+        Send message to specified session
         
         Args:
-            session_id: 目标Session ID
-            message: 要发送的消息
+            session_id: Target Session ID
+            message: Message to send
             
         Returns:
-            bool: 是否发送成功
+            bool: Whether send was successful
         """
         if session_id not in self.active_connections:
             logger.warning(f"Attempted to send message to non-existent connection: {session_id}")
@@ -150,13 +150,13 @@ class ConnectionManager:
         websocket = self.active_connections[session_id]
         
         try:
-            # 序列化消息
+            # Serialize message
             message_json = message.model_dump_json()
             
-            # 发送消息
+            # Send message
             await websocket.send_text(message_json)
             
-            # Update statistics和活动时间
+            # Update statistics and activity time
             self.stats.messages_sent += 1
             if session_id in self.connection_info:
                 self.connection_info[session_id].last_activity = datetime.now()
@@ -167,17 +167,17 @@ class ConnectionManager:
         except Exception as e:
             logger.error(f"Failed to send message to {session_id}: {e}")
             self.stats.errors_count += 1
-            # 连接可能已断开，清理连接
+            # Connection may be broken, clean up
             await self._cleanup_connection(session_id)
             return False
     
     async def broadcast_message(self, message: WebSocketMessage, exclude_sessions: Set[str] = None):
         """
-        广播消息到所有连接（可选择排除某些会话）
+        Broadcast message to all connections (optionally excluding certain sessions)
         
         Args:
-            message: 要广播的消息
-            exclude_sessions: 要排除的Session ID集合
+            message: Message to broadcast
+            exclude_sessions: Set of Session IDs to exclude
         """
         exclude_sessions = exclude_sessions or set()
         
@@ -193,29 +193,29 @@ class ConnectionManager:
     
     async def handle_message(self, session_id: str, raw_message: str, ai_coordinator) -> Optional[WebSocketMessage]:
         """
-        处理接收到的WebSocket消息
+        Handle received WebSocket message
         
         Args:
-            session_id: 发送者Session ID
-            raw_message: 原始消息字符串
-            ai_coordinator: AI协调器实例
+            session_id: Sender Session ID
+            raw_message: Raw message string
+            ai_coordinator: AI coordinator instance
             
         Returns:
-            Optional[WebSocketMessage]: 响应消息（如果有）
+            Optional[WebSocketMessage]: Response message (if any)
         """
         try:
-            # Update statistics和活动时间
+            # Update statistics and activity time
             self.stats.messages_received += 1
             if session_id in self.connection_info:
                 self.connection_info[session_id].last_activity = datetime.now()
             
-            # 解析消息
+            # Parse message
             message_data = json.loads(raw_message)
             message_type = message_data.get("type")
             
             logger.debug(f"Received message from {session_id}: {message_type}")
             
-            # 路由消息到相应的处理器
+            # Route message to appropriate handler
             if message_type == WebSocketMessageType.PING:
                 return await self._handle_ping(session_id, message_data)
             
@@ -280,18 +280,18 @@ class ConnectionManager:
             )
     
     async def _handle_ping(self, session_id: str, message_data: dict) -> PongMessage:
-        """处理心跳ping消息"""
+        """Handle heartbeat ping message"""
         return PongMessage(
             session_id=session_id,
             data={"timestamp": datetime.now().isoformat()}
         )
     
     async def _handle_connect(self, session_id: str, message_data: dict) -> StatusMessage:
-        """处理连接配置消息"""
+        """Handle connection configuration message"""
         try:
             connect_msg = ConnectMessage(**message_data)
             
-            # 更新连接配置
+            # Update connection configuration
             if session_id in self.connection_info:
                 self.connection_info[session_id].interview_style = connect_msg.data.get("interview_style", "formal")
             
@@ -315,7 +315,7 @@ class ConnectionManager:
             )
     
     async def _handle_text_input(self, session_id: str, message_data: dict, ai_coordinator) -> AIResponseMessage:
-        """处理文本输入消息"""
+        """Handle text input message"""
         try:
             text_msg = TextInputMessage(**message_data)
             
@@ -375,11 +375,11 @@ class ConnectionManager:
             )
     
     async def _handle_audio_input(self, session_id: str, message_data: dict, ai_coordinator) -> AIResponseMessage:
-        """处理音频输入消息"""
+        """Handle audio input message"""
         try:
             audio_msg = AudioInputMessage(**message_data)
             
-            # 获取音频数据
+            # Get audio data
             audio_data = audio_msg.get_audio_data()
             if not audio_data:
                 raise ValueError("No audio data provided")
@@ -442,24 +442,24 @@ class ConnectionManager:
             )
     
     async def _cleanup_connection(self, session_id: str):
-        """清理连接相关资源"""
+        """Clean up connection resources"""
         try:
-            # 关闭WebSocket连接
+            # Close WebSocket connection
             if session_id in self.active_connections:
                 websocket = self.active_connections[session_id]
                 try:
                     await websocket.close()
                 except:
-                    pass  # 连接可能已经关闭
+                    pass  # Connection may already be closed
                 del self.active_connections[session_id]
             
-            # 更新连接信息
+            # Update connection info
             if session_id in self.connection_info:
                 self.connection_info[session_id].is_active = False
-                # 注意：不删除connection_info，保留用于统计和调试
+                # Note: Don't delete connection_info, keep for statistics and debugging
             
-            # 注意：不删除interview_sessions，保持会话记忆
-            # 这样即使连接断开，会话数据仍然保留
+            # Note: Don't delete interview_sessions, maintain session memory
+            # This way session data is preserved even if connection drops
             
             # Update statistics
             self.stats.active_connections = len(self.active_connections)
@@ -470,50 +470,50 @@ class ConnectionManager:
             logger.error(f"Error cleaning up connection {session_id}: {e}")
     
     async def _heartbeat_loop(self):
-        """心跳检查循环"""
+        """Heartbeat check loop"""
         while True:
             try:
-                await asyncio.sleep(30)  # 每30秒检查一次
+                await asyncio.sleep(30)  # Check every 30 seconds
                 
                 current_time = datetime.now()
                 inactive_sessions = []
                 
                 for session_id, info in self.connection_info.items():
                     if info.is_active:
-                        # 检查是否超过5分钟没有活动
+                        # Check if inactive for more than 5 minutes
                         inactive_duration = (current_time - info.last_activity).total_seconds()
-                        if inactive_duration > 300:  # 5分钟
+                        if inactive_duration > 300:  # 5 minutes
                             inactive_sessions.append(session_id)
                 
-                # 清理不活跃的连接
+                # Clean up inactive connections
                 for session_id in inactive_sessions:
                     logger.info(f"Cleaning up inactive connection: {session_id}")
                     await self._cleanup_connection(session_id)
                 
-                # 更新运行时间统计
+                # Update uptime statistics
                 self.stats.uptime_seconds = (current_time - self.start_time).total_seconds()
                 
             except Exception as e:
                 logger.error(f"Error in heartbeat loop: {e}")
     
     def get_connection_stats(self) -> ConnectionStats:
-        """获取连接统计信息"""
+        """Get connection statistics"""
         current_time = datetime.now()
         self.stats.uptime_seconds = (current_time - self.start_time).total_seconds()
         self.stats.active_connections = len(self.active_connections)
         return self.stats
     
     def get_active_sessions(self) -> List[str]:
-        """获取所有活跃Session ID列表"""
+        """Get list of all active Session IDs"""
         return list(self.active_connections.keys())
     
     def get_session_info(self, session_id: str) -> Optional[ConnectionInfo]:
-        """获取指定会话的连接信息"""
+        """Get connection info for specified session"""
         return self.connection_info.get(session_id)
     
     def is_session_active(self, session_id: str) -> bool:
-        """检查会话是否活跃"""
+        """Check if session is active"""
         return session_id in self.active_connections
 
-# 全局连接管理器实例
+# Global connection manager instance
 connection_manager = ConnectionManager()

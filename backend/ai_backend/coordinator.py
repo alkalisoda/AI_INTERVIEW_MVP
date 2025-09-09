@@ -4,6 +4,7 @@ from typing import Dict, Any, Optional, List
 from datetime import datetime
 from pathlib import Path
 import os
+import json
 
 from core.config import settings
 from core.utils import AudioFileHandler, ResponseFormatter, task_manager
@@ -32,6 +33,9 @@ class AICoordinator:
         # Set test data path
         self.test_data_path = Path(__file__).parent.parent / "tests" / "test_data"
         
+        # Set reports data path
+        self.reports_path = Path(__file__).parent.parent / "reports"
+        
         # Processing status tracking
         self.active_tasks = {}
         
@@ -44,6 +48,169 @@ class AICoordinator:
         
         # Interview status tracking
         self.interview_states = {}  # session_id -> {current_question_index, followup_count, questions}
+    
+    async def health_check(self) -> Dict[str, Any]:
+        """
+        Perform health check on all AI modules
+        
+        Returns:
+            Dict: Health status of coordinator and all modules
+        """
+        try:
+            logger.info("Performing AI Coordinator health check")
+            
+            health_status = {
+                "coordinator_status": "healthy",
+                "modules": {},
+                "timestamp": datetime.now().isoformat()
+            }
+            
+            # Check speech recognizer
+            try:
+                recognizer_health = await self.speech_recognizer.health_check()
+                health_status["modules"]["speech_recognition"] = recognizer_health.get("status", "unknown")
+            except Exception as e:
+                logger.warning(f"Speech recognizer health check failed: {e}")
+                health_status["modules"]["speech_recognition"] = "unhealthy"
+            
+            # Check planner
+            try:
+                # Basic initialization check
+                if hasattr(self.planner, 'llm') and self.planner.llm:
+                    health_status["modules"]["planner"] = "healthy"
+                else:
+                    health_status["modules"]["planner"] = "degraded"
+            except Exception as e:
+                logger.warning(f"Planner health check failed: {e}")
+                health_status["modules"]["planner"] = "unhealthy"
+            
+            # Check chatbot
+            try:
+                # Basic initialization check
+                if hasattr(self.chatbot, 'llm') and self.chatbot.llm:
+                    health_status["modules"]["chatbot"] = "healthy"
+                else:
+                    health_status["modules"]["chatbot"] = "degraded"
+            except Exception as e:
+                logger.warning(f"Chatbot health check failed: {e}")
+                health_status["modules"]["chatbot"] = "unhealthy"
+            
+            # Determine overall coordinator status
+            unhealthy_modules = [k for k, v in health_status["modules"].items() if v == "unhealthy"]
+            if unhealthy_modules:
+                health_status["coordinator_status"] = "degraded"
+                logger.warning(f"AI Coordinator degraded - unhealthy modules: {unhealthy_modules}")
+            
+            # Add system information
+            health_status["system_info"] = {
+                "active_sessions": len(self.interview_states),
+                "supported_audio_formats": self.supported_audio_formats,
+                "test_data_available": self.test_data_path.exists()
+            }
+            
+            logger.info(f"AI Coordinator health check completed: {health_status['coordinator_status']}")
+            return health_status
+            
+        except Exception as e:
+            logger.error(f"Health check failed: {e}")
+            return {
+                "coordinator_status": "unhealthy",
+                "error": str(e),
+                "timestamp": datetime.now().isoformat()
+            }
+    
+    async def transcribe_audio(
+        self,
+        audio_content: bytes,
+        audio_format: str,
+        session_id: str
+    ) -> Dict[str, Any]:
+        """
+        Transcribe audio content (for API Gateway compatibility)
+        
+        Args:
+            audio_content: Audio file content as bytes
+            audio_format: Audio file format
+            session_id: Session ID for logging
+            
+        Returns:
+            Dict: Transcription result with success status and transcription text
+        """
+        try:
+            start_time = datetime.now()
+            
+            # Call recognizer directly
+            result = await self.speech_recognizer.transcribe_audio(
+                audio_content=audio_content,
+                audio_format=audio_format,
+                session_id=session_id
+            )
+            
+            processing_time = (datetime.now() - start_time).total_seconds()
+            
+            # Return in expected format for API Gateway
+            return {
+                "success": True,
+                "transcription": result.get("transcription", ""),
+                "confidence": result.get("confidence", 0.0),
+                "duration": result.get("duration", 0.0),
+                "language": result.get("language", "en"),
+                "processing_time": processing_time
+            }
+                
+        except Exception as e:
+            processing_time = (datetime.now() - start_time).total_seconds()
+            logger.error(f"[{session_id}] Audio transcription failed: {e}")
+            return {
+                "success": False,
+                "transcription": "",
+                "error": str(e),
+                "processing_time": processing_time
+            }
+    
+    async def transcribe_audio_direct(
+        self,
+        audio_content: bytes,
+        file_format: str,
+        session_id: str
+    ) -> Dict[str, Any]:
+        """
+        Direct audio transcription method (for process_unified_input compatibility)
+        
+        Args:
+            audio_content: Audio file content as bytes
+            file_format: Audio file format (e.g., 'webm', 'mp3', 'wav')
+            session_id: Session ID for logging
+            
+        Returns:
+            Dict: Transcription result with success status and text
+        """
+        try:
+            # Call recognizer directly
+            result = await self.speech_recognizer.transcribe_audio(
+                audio_content=audio_content,
+                audio_format=file_format,
+                session_id=session_id
+            )
+            
+            # Return unified format
+            return {
+                "success": True,
+                "text": result.get("transcription", ""),
+                "confidence": result.get("confidence", 0.0),
+                "duration": result.get("duration", 0.0),
+                "language": result.get("language", "en"),
+                "processing_time": result.get("processing_time", 0.0)
+            }
+            
+        except Exception as e:
+            logger.error(f"[{session_id}] Direct audio transcription failed: {e}")
+            return {
+                "success": False,
+                "text": "",
+                "error": str(e),
+                "processing_time": 0.0
+            }
     
     async def process_interview_cycle(
         self,
@@ -195,20 +362,192 @@ class AICoordinator:
         """Get complete conversation history"""
         return self.planner.get_conversation_memory(session_id)
     
+    def _save_report_to_file(self, report_data: Dict[str, Any], candidate_name: str, session_id: str) -> Dict[str, str]:
+        """
+        Save interview report to files (JSON and Markdown)
+        
+        Args:
+            report_data: Report data dictionary
+            candidate_name: Candidate name for file naming
+            session_id: Session ID
+            
+        Returns:
+            Dict: File paths of saved reports
+        """
+        try:
+            # Create date-based directory
+            now = datetime.now()
+            date_folder = now.strftime("%Y-%m-%d")
+            time_stamp = now.strftime("%H-%M-%S")
+            
+            # Create directory structure
+            date_dir = self.reports_path / date_folder
+            date_dir.mkdir(parents=True, exist_ok=True)
+            
+            # Clean candidate name for filename
+            safe_candidate_name = "".join(c for c in candidate_name if c.isalnum() or c in (' ', '-', '_')).rstrip()
+            safe_candidate_name = safe_candidate_name.replace(' ', '_')
+            
+            # Generate file names
+            base_filename = f"{time_stamp}_{safe_candidate_name}_{session_id[:8]}"
+            json_filename = f"{base_filename}_report.json"
+            md_filename = f"{base_filename}_report.md"
+            
+            json_path = date_dir / json_filename
+            md_path = date_dir / md_filename
+            
+            # Save JSON report
+            with open(json_path, 'w', encoding='utf-8') as f:
+                json.dump(report_data, f, indent=2, ensure_ascii=False, default=str)
+            
+            # Generate and save Markdown report
+            md_content = self._generate_markdown_report(report_data)
+            with open(md_path, 'w', encoding='utf-8') as f:
+                f.write(md_content)
+            
+            logger.info(f"[{session_id}] Reports saved - JSON: {json_path}, Markdown: {md_path}")
+            
+            return {
+                "json_path": str(json_path),
+                "markdown_path": str(md_path),
+                "date_folder": date_folder,
+                "timestamp": time_stamp
+            }
+            
+        except Exception as e:
+            logger.error(f"[{session_id}] Failed to save report files: {e}")
+            return {
+                "error": str(e),
+                "json_path": "",
+                "markdown_path": ""
+            }
+
+    def _generate_markdown_report(self, report_data: Dict[str, Any]) -> str:
+        """
+        Generate human-readable Markdown report
+        
+        Args:
+            report_data: Report data dictionary
+            
+        Returns:
+            str: Markdown formatted report
+        """
+        report = report_data.get("report", {})
+        
+        md_lines = [
+            f"# Interview Report",
+            f"",
+            f"## Interview Information",
+            f"- **Candidate**: {report.get('candidate_name', 'Anonymous')}",
+            f"- **Session ID**: {report.get('session_id', 'Unknown')}",
+            f"- **Date**: {report.get('interview_date', 'Unknown')}",
+            f"- **Duration**: {report.get('duration_minutes', 0):.1f} minutes",
+            f"- **Generated**: {report_data.get('generated_at', 'Unknown')}",
+            f"",
+            f"## Overall Assessment",
+            f"- **Overall Score**: {report.get('overall_score', 0)}/10",
+            f"- **Questions Answered**: {report.get('total_questions', 0)}",
+            f"- **Follow-up Questions**: {report.get('followup_questions', 0)}",
+            f"- **Average Response Quality**: {report.get('response_quality_avg', 0):.1f}/10",
+            f"",
+            f"### Overall Summary",
+            f"{report.get('overall_summary', 'No summary available')}",
+            f"",
+            f"## Skills Assessment",
+            f""
+        ]
+        
+        # Add skill assessments
+        for skill in report.get('skill_assessments', []):
+            md_lines.extend([
+                f"### {skill.get('skill_name', 'Unknown Skill')} ({skill.get('score', 0)}/10)",
+                f"",
+                f"**Evidence:**"
+            ])
+            for evidence in skill.get('evidence', []):
+                md_lines.append(f"- {evidence}")
+            
+            md_lines.append(f"")
+            md_lines.append(f"**Improvement Suggestions:**")
+            for suggestion in skill.get('improvement_suggestions', []):
+                md_lines.append(f"- {suggestion}")
+            
+            md_lines.append(f"")
+        
+        # Add strengths and areas for improvement
+        md_lines.extend([
+            f"## Strengths",
+            f""
+        ])
+        for strength in report.get('strengths', []):
+            md_lines.append(f"- {strength}")
+        
+        md_lines.extend([
+            f"",
+            f"## Areas for Improvement",
+            f""
+        ])
+        for area in report.get('areas_for_improvement', []):
+            md_lines.append(f"- {area}")
+        
+        # Add behavioral insights
+        md_lines.extend([
+            f"",
+            f"## Behavioral Insights",
+            f""
+        ])
+        for insight in report.get('behavioral_insights', []):
+            md_lines.append(f"- {insight}")
+        
+        # Add hiring recommendation
+        md_lines.extend([
+            f"",
+            f"## Hiring Recommendation",
+            f"**Decision**: {report.get('hiring_recommendation', 'neutral').replace('_', ' ').title()}",
+            f"",
+            f"**Next Steps:**"
+        ])
+        for step in report.get('next_steps', []):
+            md_lines.append(f"- {step}")
+        
+        # Add question performance
+        md_lines.extend([
+            f"",
+            f"## Question Performance Analysis",
+            f""
+        ])
+        
+        for i, performance in enumerate(report.get('question_performance', []), 1):
+            md_lines.extend([
+                f"### Question {i}",
+                f"**Question**: {performance.get('question', 'Unknown')}",
+                f"**Performance Score**: {performance.get('score', 0)}/10",
+                f"**Analysis**: {performance.get('analysis', 'No analysis available')}",
+                f""
+            ])
+        
+        md_lines.extend([
+            f"",
+            f"---",
+            f"*This report was automatically generated by the AI Interview System*"
+        ])
+        
+        return "\n".join(md_lines)
+
     async def generate_interview_report(
         self,
         session_id: str,
         candidate_name: str = "Anonymous"
     ) -> Dict[str, Any]:
         """
-        Generate interview report
+        Generate and save interview report to files
         
         Args:
             session_id: Session ID
             candidate_name: Candidate name
             
         Returns:
-            Dict: Interview report data
+            Dict: Interview report data with file paths
         """
         try:
             logger.info(f"[{session_id}] Generating interview report for {candidate_name}")
@@ -232,14 +571,25 @@ class AICoordinator:
                 timeout=settings.FOLLOWUP_TIMEOUT * 2  # Report generation may take longer
             )
             
-            logger.info(f"[{session_id}] Interview report generated successfully")
-            
-            return {
+            # Prepare report data for saving
+            report_data = {
                 "success": True,
                 "report": report.model_dump(),
                 "generated_at": datetime.now().isoformat(),
                 "session_id": session_id
             }
+            
+            # Save report to files
+            file_paths = self._save_report_to_file(report_data, candidate_name, session_id)
+            
+            # Add file paths to response
+            report_data.update({
+                "files": file_paths
+            })
+            
+            logger.info(f"[{session_id}] Interview report generated and saved successfully")
+            
+            return report_data
             
         except Exception as e:
             logger.error(f"[{session_id}] Failed to generate interview report: {e}")
@@ -248,7 +598,12 @@ class AICoordinator:
                 "success": False,
                 "error": str(e),
                 "session_id": session_id,
-                "generated_at": datetime.now().isoformat()
+                "generated_at": datetime.now().isoformat(),
+                "files": {
+                    "error": str(e),
+                    "json_path": "",
+                    "markdown_path": ""
+                }
             }
 
     async def process_unified_input(

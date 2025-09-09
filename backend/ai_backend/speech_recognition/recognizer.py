@@ -70,14 +70,14 @@ class SpeechRecognizer:
     
     async def transcribe_with_preprocessing(self, file_path: str) -> Dict[str, Any]:
         """
-        带预处理的转录
-        对音频进行预处理以提高识别准确性
+        Transcribe with preprocessing
+        Preprocess audio to improve recognition accuracy
         """
         try:
-            # TODO: 可以添加音频预处理步骤
-            # - 降噪
-            # - 音量标准化
-            # - 格式转换
+            # TODO: Add audio preprocessing steps
+            # - Noise reduction
+            # - Volume normalization
+            # - Format conversion
             
             return await self.transcribe_file(file_path)
             
@@ -87,12 +87,12 @@ class SpeechRecognizer:
     
     async def batch_transcribe(self, file_paths: list) -> Dict[str, Dict[str, Any]]:
         """
-        批量转录多个音频文件
+        Batch transcribe multiple audio files
         """
         results = {}
         
         try:
-            # 并发处理多个文件
+            # Process multiple files concurrently
             tasks = [
                 self.transcribe_file(file_path) 
                 for file_path in file_paths
@@ -120,67 +120,67 @@ class SpeechRecognizer:
     
     def _estimate_confidence(self, transcript) -> float:
         """
-        估算转录置信度
-        基于Whisper API返回的信息估算置信度分数
+        Estimate transcription confidence
+        Calculate confidence score based on Whisper API response
         """
         try:
-            # Whisper API的verbose_json格式可能包含段落级别的置信度
+            # Whisper API verbose_json format may include segment-level confidence
             if hasattr(transcript, 'segments') and transcript.segments:
-                # 计算所有段落的平均置信度
+                # Calculate average confidence across all segments
                 confidences = []
                 for segment in transcript.segments:
                     if hasattr(segment, 'avg_logprob'):
-                        # 将对数概率转换为0-1范围的置信度
+                        # Convert log probability to 0-1 confidence range
                         confidence = min(1.0, max(0.0, (segment.avg_logprob + 1.0)))
                         confidences.append(confidence)
                 
                 if confidences:
                     return sum(confidences) / len(confidences)
             
-            # 如果没有详细信息，根据文本质量估算
+            # If no detailed info, estimate based on text quality
             text = transcript.text.strip()
             if not text:
                 return 0.0
             
-            # 简单的启发式评估
-            confidence = 0.7  # 基础置信度
+            # Simple heuristic evaluation
+            confidence = 0.7  # Base confidence
             
-            # 根据文本特征调整
+            # Adjust based on text features
             if len(text) > 10:
                 confidence += 0.1
             if any(char.isdigit() for char in text):
                 confidence += 0.05
-            if text.count('.') > 0:  # 完整句子
+            if text.count('.') > 0:  # Complete sentences
                 confidence += 0.1
-            if text.isupper() or text.islower():  # 全大写或全小写可能是错误
+            if text.isupper() or text.islower():  # All caps or lowercase may indicate errors
                 confidence -= 0.2
             
             return min(1.0, max(0.0, confidence))
             
         except Exception as e:
             logger.warning(f"Confidence estimation failed: {e}")
-            return 0.5  # 默认中等置信度
+            return 0.5  # Default medium confidence
     
     async def validate_audio_quality(self, file_path: str) -> Dict[str, Any]:
         """
-        验证音频质量
-        检查音频是否适合转录
+        Validate audio quality
+        Check if audio is suitable for transcription
         """
         try:
             file_path_obj = Path(file_path)
             
-            # 基本文件检查
+            # Basic file checks
             if not file_path_obj.exists():
                 return {"valid": False, "reason": "File not found"}
             
             file_size = file_path_obj.stat().st_size
-            if file_size < 1024:  # 小于1KB
+            if file_size < 1024:  # Less than 1KB
                 return {"valid": False, "reason": "File too small"}
             
             if file_size > settings.MAX_AUDIO_SIZE:
                 return {"valid": False, "reason": "File too large"}
             
-            # 检查文件格式
+            # Check file format
             file_extension = file_path_obj.suffix.lower().lstrip('.')
             if file_extension not in settings.SUPPORTED_AUDIO_FORMATS:
                 return {
@@ -188,11 +188,11 @@ class SpeechRecognizer:
                     "reason": f"Unsupported format: {file_extension}"
                 }
             
-            # TODO: 可以添加更详细的音频质量检查
-            # - 音频长度
-            # - 采样率
-            # - 比特率
-            # - 噪声水平
+            # TODO: Add more detailed audio quality checks
+            # - Audio duration
+            # - Sample rate
+            # - Bit rate
+            # - Noise level
             
             return {
                 "valid": True,
@@ -204,21 +204,79 @@ class SpeechRecognizer:
             logger.error(f"Audio quality validation failed: {e}")
             return {"valid": False, "reason": f"Validation error: {str(e)}"}
     
+    async def transcribe_audio(
+        self,
+        audio_content: bytes,
+        audio_format: str,
+        session_id: str
+    ) -> Dict[str, Any]:
+        """
+        Transcribe audio from bytes content
+        
+        Args:
+            audio_content: Audio file content as bytes
+            audio_format: Audio file format (e.g., 'webm', 'mp3', 'wav')
+            session_id: Session ID for logging
+            
+        Returns:
+            Dict containing transcription text and metadata
+        """
+        try:
+            logger.info(f"[{session_id}] Starting audio transcription from bytes, format: {audio_format}")
+            
+            # Validate file size
+            if len(audio_content) > settings.MAX_AUDIO_SIZE:
+                raise ValueError(f"Audio content too large: {len(audio_content)} bytes (max: {settings.MAX_AUDIO_SIZE})")
+            
+            # Validate format
+            if audio_format not in settings.SUPPORTED_AUDIO_FORMATS:
+                raise ValueError(f"Unsupported audio format: {audio_format}")
+            
+            # Create a file-like object from bytes
+            import io
+            audio_file = io.BytesIO(audio_content)
+            audio_file.name = f"audio.{audio_format}"  # Set filename for API
+            
+            # Call Whisper API
+            transcript = await self.client.audio.transcriptions.create(
+                model=self.model,
+                file=audio_file,
+                language="en",  # English interview
+                response_format="verbose_json",  # Get detailed information
+                temperature=0.0  # More accurate transcription
+            )
+            
+            # Process transcription results
+            result = {
+                "transcription": transcript.text.strip(),
+                "confidence": self._estimate_confidence(transcript),
+                "duration": getattr(transcript, 'duration', 0.0),
+                "language": getattr(transcript, 'language', 'en')
+            }
+            
+            logger.info(f"[{session_id}] Transcription completed. Text length: {len(result['transcription'])} chars")
+            
+            return result
+            
+        except Exception as e:
+            logger.error(f"[{session_id}] Audio transcription failed: {e}")
+            raise Exception(f"Speech recognition failed: {str(e)}")
+    
     async def health_check(self) -> Dict[str, Any]:
         """
         Health check
-        验证语音识别服务是否正常工作
+        Verify if speech recognition service is working properly
         """
         try:
-            # 检查OpenAI API连接
+            # Check OpenAI API connection
             if not settings.OPENAI_API_KEY:
                 return {
                     "status": "unhealthy",
                     "reason": "Missing OpenAI API key"
                 }
             
-            # TODO: 可以添加实际的API连接测试
-            # 使用小的测试音频文件验证服务可用性
+            # TODO: Add actual API connection test
+            # Use small test audio file to verify service availability
             
             return {
                 "status": "healthy",

@@ -40,21 +40,27 @@ active_sessions = get_active_sessions()
 INTERVIEW_QUESTIONS = [
     {
         "id": 1,
+        "question": "Please introduce yourself briefly, including your background, key experiences, and what you're looking for in your next role.",
+        "type": "introduction",
+        "category": "self_introduction"
+    },
+    {
+        "id": 2,
         "question": "Tell me about a recent achievement you are most proud of. What role did you play?",
         "type": "behavioral",
         "category": "achievement"
     },
     {
-        "id": 2,
+        "id": 3,
         "question": "Describe a time when you overcame a conflict or challenge.",
         "type": "behavioral", 
         "category": "conflict_resolution"
     },
     {
-        "id": 3,
-        "question": "If you join a project team that you are not familiar with, how would you quickly adapt?",
+        "id": 4,
+        "question": "How do you approach joining a new team and integrating with existing team members?",
         "type": "behavioral",
-        "category": "adaptability"
+        "category": "team_integration"
     }
 ]
 

@@ -26,39 +26,39 @@ class FollowUpRequest(BaseModel):
     context: Optional[str] = None
 
 class JSONWorkflowRequest(BaseModel):
-    """JSON工作流请求模型"""
-    json_data: Dict[str, Any] = Field(description="包含用户输入和planner建议的JSON数据")
+    """JSON workflow request model"""
+    json_data: Dict[str, Any] = Field(description="JSON data containing user input and planner suggestions")
 
 class UnifiedInputRequest(BaseModel):
-    """统一输入处理请求模型"""
-    text: Optional[str] = Field(None, description="文本输入")
+    """Unified input processing request model"""
+    text: Optional[str] = Field(None, description="Text input")
     context: Optional[str] = Field(None, description="conversation context")
     original_question: Optional[str] = Field(None, description="original question")
     interview_style: str = Field(default="formal", description="interview style")
     
 class UnifiedInputResponse(BaseModel):
-    """统一输入处理响应模型"""
+    """Unified input processing response model"""
     session_id: str
-    input_type: str = Field(description="输入类型: text 或 audio")
-    user_input: str = Field(description="用户输入文本")
-    ai_response: str = Field(description="AI生成的回复")
-    response_type: str = Field(description="回复类型")
-    strategy_used: str = Field(description="使用的策略")
-    focus_area: str = Field(description="关注领域")
-    confidence: float = Field(description="置信度")
-    processing_time: float = Field(description="处理时间")
-    transcription_info: Optional[Dict[str, Any]] = Field(None, description="转录信息（音频输入时）")
+    input_type: str = Field(description="Input type: text or audio")
+    user_input: str = Field(description="User input text")
+    ai_response: str = Field(description="AI generated response")
+    response_type: str = Field(description="Response type")
+    strategy_used: str = Field(description="Strategy used")
+    focus_area: str = Field(description="Focus area")
+    confidence: float = Field(description="Confidence score")
+    processing_time: float = Field(description="Processing time")
+    transcription_info: Optional[Dict[str, Any]] = Field(None, description="Transcription info (for audio input)")
     
 class JSONWorkflowResponse(BaseModel):
-    """JSON工作流响应模型"""
+    """JSON workflow response model"""
     session_id: str
-    response: str = Field(description="生成的回复")
-    response_type: str = Field(description="回复类型")
-    strategy_used: str = Field(description="使用的策略")
-    focus_area: str = Field(description="关注领域")
-    confidence: float = Field(description="置信度")
-    processing_time: float = Field(description="处理时间")
-    alternatives: List[str] = Field(default_factory=list, description="备选回复")
+    response: str = Field(description="Generated response")
+    response_type: str = Field(description="Response type")
+    strategy_used: str = Field(description="Strategy used")
+    focus_area: str = Field(description="Focus area")
+    confidence: float = Field(description="Confidence score")
+    processing_time: float = Field(description="Processing time")
+    alternatives: List[str] = Field(default_factory=list, description="Alternative responses")
 
 # Response Models
 class InterviewQuestion(BaseModel):
@@ -110,15 +110,15 @@ class InterviewCompletionResponse(BaseModel):
     session_duration: str
 
 class InterviewReportRequest(BaseModel):
-    """面试报告生成请求"""
+    """Interview report generation request"""
     candidate_name: str = Field(default="Anonymous", description="Candidate name")
     
 class InterviewReportResponse(BaseModel):
-    """面试报告响应"""
+    """Interview report response"""
     session_id: str
     success: bool
-    report: Optional[Dict[str, Any]] = Field(None, description="报告内容")
-    error: Optional[str] = Field(None, description="错误信息")
+    report: Optional[Dict[str, Any]] = Field(None, description="Report content")
+    error: Optional[str] = Field(None, description="Error message")
     generated_at: str
 
 # Error Models

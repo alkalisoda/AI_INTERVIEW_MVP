@@ -1,0 +1,132 @@
+{
+  "success": true,
+  "report": {
+    "session_id": "1757385302672",
+    "candidate_name": "QINGYANG WU",
+    "interview_date": "2025-09-08",
+    "duration_minutes": 12.0,
+    "overall_score": 5,
+    "overall_summary": "The candidate, Qingyang Wu, demonstrated basic technical skills and a structured approach to challenges but lacked depth in responses and specificity in examples. The interview responses were brief and often repeated, indicating a potential gap in communication skills and depth of experience.",
+    "skill_assessments": [
+      {
+        "skill_name": "Communication",
+        "score": 4,
+        "evidence": [
+          "Brief and repetitive responses",
+          "Lack of detailed examples"
+        ],
+        "improvement_suggestions": [
+          "Provide more detailed and specific examples",
+          "Expand on experiences with clear narratives"
+        ]
+      },
+      {
+        "skill_name": "Problem-solving",
+        "score": 6,
+        "evidence": [
+          "Used AI tools to overcome technical challenges",
+          "Managed time effectively between job hunting and studies"
+        ],
+        "improvement_suggestions": [
+          "Discuss problem-solving processes in more detail",
+          "Highlight outcomes and impacts of solutions"
+        ]
+      },
+      {
+        "skill_name": "Teamwork",
+        "score": 5,
+        "evidence": [
+          "Acknowledged the importance of understanding team goals",
+          "Mentioned learning from existing projects"
+        ],
+        "improvement_suggestions": [
+          "Provide examples of past teamwork experiences",
+          "Discuss how collaboration improved project outcomes"
+        ]
+      },
+      {
+        "skill_name": "Leadership",
+        "score": 4,
+        "evidence": [
+          "No specific leadership examples provided"
+        ],
+        "improvement_suggestions": [
+          "Share experiences where leadership skills were demonstrated",
+          "Discuss decision-making processes and influence on teams"
+        ]
+      },
+      {
+        "skill_name": "Learning ability",
+        "score": 6,
+        "evidence": [
+          "Learned ML and deep learning through courses and research",
+          "Adapted to using AI tools for technical tasks"
+        ],
+        "improvement_suggestions": [
+          "Provide more examples of continuous learning",
+          "Discuss how new skills have been applied in practice"
+        ]
+      }
+    ],
+    "strengths": [
+      "Technical skills in machine learning and AI",
+      "Ability to manage time effectively"
+    ],
+    "areas_for_improvement": [
+      "Depth and specificity of responses",
+      "Communication skills"
+    ],
+    "behavioral_insights": [
+      "Candidate is structured in planning and time management",
+      "Shows initiative in learning new technologies"
+    ],
+    "question_performance": [
+      {
+        "question": "Please introduce yourself briefly, including your background, key experiences, and what you're looking for in your next role.",
+        "answer_quality": 4,
+        "performance": "Responses were brief and lacked detail about key experiences and future goals.",
+        "improvement_suggestions": [
+          "Expand on educational background and key projects",
+          "Clarify career aspirations and role expectations"
+        ]
+      },
+      {
+        "question": "Tell me about a recent achievement you are most proud of. What role did you play?",
+        "answer_quality": 5,
+        "performance": "Mentioned creating an AI interview robot but lacked details on the process and impact.",
+        "improvement_suggestions": [
+          "Discuss the challenges faced and how they were overcome",
+          "Explain the impact of the achievement on the project or team"
+        ]
+      },
+      {
+        "question": "Describe a time when you overcame a conflict or challenge.",
+        "answer_quality": 6,
+        "performance": "Managed job hunting and studies effectively, showing good time management.",
+        "improvement_suggestions": [
+          "Provide more context on the challenges faced",
+          "Discuss the outcomes of the strategies used"
+        ]
+      },
+      {
+        "question": "How do you approach joining a new team and integrating with existing team members?",
+        "answer_quality": 5,
+        "performance": "Acknowledged the importance of understanding team goals but lacked examples of past experiences.",
+        "improvement_suggestions": [
+          "Share specific experiences of integrating into a team",
+          "Discuss how understanding team dynamics improved collaboration"
+        ]
+      }
+    ],
+    "hiring_recommendation": "neutral",
+    "next_steps": [
+      "Conduct a follow-up interview focusing on specific experiences and detailed examples",
+      "Assess communication skills through situational questions"
+    ],
+    "total_questions": 8,
+    "followup_questions": 0,
+    "response_quality_avg": 5.0
+  },
+  "generated_at": "2025-09-08T19:40:10.643177",
+  "session_id": "1757385302672"
+}
